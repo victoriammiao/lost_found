@@ -1,0 +1,53 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 顶部栏: 欢迎语 + 退出 -->
+  <view class="top-bar">
+    <view class="hello">Hi, {{username}}</view>
+    <text class="logout" bindtap="logout">退出</text>
+  </view>
+
+  <!-- 标题行 + 去发布按钮 -->
+  <view class="action-row">
+    <view class="page-title">公开失物列表</view>
+    <button class="publish-btn" size="mini" bindtap="goPublish">+ 去发布</button>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{items.length === 0 && !loading}}" class="empty">
+    暂无失物信息, 点击右上「去发布」发布第一条吧
+  </view>
+
+  <!-- 失物卡片列表 -->
+  <view class="list">
+    <view class="card" wx:for="{{items}}" wx:key="id">
+      <view class="card-head">
+        <text class="card-title">{{item.title}}</text>
+        <view class="status status-{{item.status === '已认领' ? 'done' : 'open'}}">
+          {{item.status}}
+        </view>
+      </view>
+
+      <view class="card-desc">{{item.description}}</view>
+
+      <!-- 【本次新增】有 imageUrl 时才渲染图片区域, 没图就不占位 -->
+      <image wx:if="{{item.imageUrl}}"
+             class="card-image"
+             src="{{item.imageUrl}}"
+             mode="aspectFill"
+             lazy-load="true" />
+
+      <view class="card-foot">
+        <text class="time">{{item.createTime}}</text>
+        <button
+          class="claim-btn claim-btn-{{item.status === '已认领' ? 'disabled' : 'active'}}"
+          size="mini"
+          disabled="{{item.status === '已认领'}}"
+          data-id="{{item.id}}"
+          data-status="{{item.status}}"
+          bindtap="onClaim">
+          {{item.status === '已认领' ? '已认领' : '认领'}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

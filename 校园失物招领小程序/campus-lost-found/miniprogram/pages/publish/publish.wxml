@@ -1,0 +1,50 @@
+<!--pages/publish/publish.wxml-->
+<view class="container">
+  <view class="page-title">发布失物信息</view>
+  <view class="page-tip">请如实填写, 方便其他同学认领</view>
+
+  <view class="form">
+    <view class="form-item">
+      <text class="label">标题</text>
+      <input class="input"
+             placeholder="例如: 在图书馆捡到校园卡"
+             maxlength="30"
+             value="{{title}}"
+             bindinput="onInputTitle" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">描述</text>
+      <textarea class="textarea"
+                placeholder="请补充时间、地点、外观特征等"
+                maxlength="200"
+                value="{{description}}"
+                bindinput="onInputDescription" />
+    </view>
+
+    <!-- 【本次新增】图片选择区 -->
+    <view class="form-item">
+      <text class="label">图片 (可选, 仅支持单张 jpg/png)</text>
+
+      <!-- 未选图片: 显示"+ 选择图片"占位框 -->
+      <view wx:if="{{!imagePath}}" class="image-picker" bindtap="onChooseImage">
+        <text class="image-picker-plus">+</text>
+        <text class="image-picker-tip">选择图片</text>
+      </view>
+
+      <!-- 已选图片: 显示预览 + 右上角 × 删除按钮 -->
+      <view wx:else class="image-preview-wrap">
+        <image class="image-preview"
+               src="{{imagePath}}"
+               mode="aspectFill"
+               bindtap="onPreviewImage" />
+        <view class="image-delete" catchtap="onDeleteImage">×</view>
+      </view>
+    </view>
+
+    <button class="primary-btn"
+            loading="{{loading}}"
+            disabled="{{loading}}"
+            bindtap="onSubmit">提交发布</button>
+  </view>
+</view>

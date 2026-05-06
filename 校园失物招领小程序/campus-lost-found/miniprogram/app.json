@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/register/register",
+    "pages/index/index",
+    "pages/publish/publish"
+  ],
+  "window": {
+    "backgroundColor": "#f5f6fa",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#3a7afe",
+    "navigationBarTitleText": "校园失物招领",
+    "navigationBarTextStyle": "white"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
