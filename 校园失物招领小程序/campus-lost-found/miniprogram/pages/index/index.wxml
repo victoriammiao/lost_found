@@ -6,7 +6,7 @@
     <text class="logout" bindtap="logout">退出</text>
   </view>
 
-  <!-- 标题行 + 去发布按钮 -->
+  <!-- 标题居中 + 下方正中「去发布」 -->
   <view class="action-row">
     <view class="page-title">公开失物列表</view>
     <button class="publish-btn" size="mini" bindtap="goPublish">+ 去发布</button>
@@ -14,7 +14,7 @@
 
   <!-- 空状态 -->
   <view wx:if="{{items.length === 0 && !loading}}" class="empty">
-    暂无失物信息, 点击右上「去发布」发布第一条吧
+    暂无失物信息, 点击下方「去发布」发布第一条吧
   </view>
 
   <!-- 失物卡片列表 -->

@@ -16,7 +16,7 @@
 
 .action-row {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 20rpx;
 }
@@ -24,8 +24,10 @@
   font-size: 36rpx;
   font-weight: 600;
   color: #222;
+  text-align: center;
 }
 .publish-btn {
+  margin-top: 20rpx;
   background: #3a7afe !important;
   color: #fff !important;
   border: none !important;
