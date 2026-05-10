@@ -3,7 +3,18 @@
     "pages/login/login",
     "pages/register/register",
     "pages/index/index",
-    "pages/publish/publish"
+    "pages/publish/publish",
+    "pages/profile/profile",
+    "pages/admin/admin",
+    "pages/map-picker/map-picker"
+  ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于在地图上显示你的位置，便于对照校园标注选点"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
   ],
   "window": {
     "backgroundColor": "#f5f6fa",

@@ -42,7 +42,12 @@ Page({
               ? it.imageUrl
               : config.baseUrl + it.imageUrl;
           }
-          return Object.assign({}, it, { imageUrl: fullUrl });
+          return Object.assign({}, it, {
+            imageUrl: fullUrl,
+            postType: it.postType || "招领",
+            locationLabel: it.locationLabel || "",
+            publisherStudentVerified: !!it.publisherStudentVerified,
+          });
         });
         this.setData({ items: list });
       } else {
@@ -59,11 +64,15 @@ Page({
   async onClaim(e) {
     const id = e.currentTarget.dataset.id;
     const status = e.currentTarget.dataset.status;
+    const postType = e.currentTarget.dataset.postType || "招领";
     if (status === "已认领") return;
 
+    const isXunwu = postType === "寻物";
     wx.showModal({
-      title: "确认认领",
-      content: "确定认领该物品吗?",
+      title: isXunwu ? "反馈失主" : "确认认领",
+      content: isXunwu
+        ? "确认你已捡到该物品或要与失主对接吗？确认后将标记为已认领。"
+        : "确定认领该物品吗?",
       success: async (r) => {
         if (!r.confirm) return;
         try {
@@ -86,6 +95,15 @@ Page({
   // 跳转发布页
   goPublish() {
     wx.navigateTo({ url: "/pages/publish/publish" });
+  },
+
+  /** 底部栏「首页」：已在首页则刷新列表 */
+  goHome() {
+    this.loadItems();
+  },
+
+  goProfile() {
+    wx.navigateTo({ url: "/pages/profile/profile" });
   },
 
   // 退出登录

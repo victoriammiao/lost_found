@@ -9,9 +9,16 @@ const config = require("./config.js");
  * @param {string} url      - 接口路径, 如 /login
  * @param {string} method   - HTTP 方法, 默认 GET
  * @param {object} data     - 请求体 / 查询参数
- * @param {boolean} auth    - 是否需要带 token, 默认 true
+ * @param {boolean} auth       - 是否需要带 token, 默认 true
+ * @param {boolean} failToast  - 网络失败时是否弹出通用 toast, 默认 true（需要自定义提示时可设 false）
  */
-function request({ url, method = "GET", data = {}, auth = true }) {
+function request({
+  url,
+  method = "GET",
+  data = {},
+  auth = true,
+  failToast = true,
+}) {
   return new Promise((resolve, reject) => {
     const header = { "Content-Type": "application/json" };
 
@@ -43,11 +50,28 @@ function request({ url, method = "GET", data = {}, auth = true }) {
         resolve(res.data);
       },
       fail: (err) => {
-        wx.showToast({ title: "网络异常, 请检查后端是否启动", icon: "none" });
+        if (failToast) {
+          wx.showToast({ title: "网络异常, 请检查后端是否启动", icon: "none" });
+        }
         reject(err);
       },
     });
   });
+}
+
+/** 根据 wx.request fail 的 errMsg 给出简短排查提示（供地点库等关键接口使用） */
+function hintFromRequestFail(err) {
+  const m = (err && err.errMsg) || "";
+  if (m.indexOf("domain") !== -1) {
+    return "域名校验失败：开发工具里勾选「不校验合法域名…」或在后台配置 request 合法域名";
+  }
+  if (m.indexOf("timeout") !== -1) {
+    return "请求超时：检查电脑/手机与后端是否同一网络、防火墙是否放行端口";
+  }
+  if (m.indexOf("127.0.0.1") !== -1 || m.indexOf("localhost") !== -1) {
+    return "真机无法访问本机 127.0.0.1：请把 utils/config.js 的 baseUrl 改成电脑的局域网 IP";
+  }
+  return "无法连接后端：先在本机启动 Flask；真机预览时 baseUrl 必须用局域网 IP（勿用 127.0.0.1）";
 }
 
 /**
@@ -109,4 +133,4 @@ function uploadFile({ url, filePath, name = "file", formData = {}, auth = true }
   });
 }
 
-module.exports = { request, uploadFile };
+module.exports = { request, uploadFile, hintFromRequestFail };

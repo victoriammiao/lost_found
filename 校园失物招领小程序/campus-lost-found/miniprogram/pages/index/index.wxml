@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<view class="container">
+<view class="container page-with-nav">
   <!-- 顶部栏: 欢迎语 + 退出 -->
   <view class="top-bar">
     <view class="hello">Hi, {{username}}</view>
@@ -21,11 +21,20 @@
   <view class="list">
     <view class="card" wx:for="{{items}}" wx:key="id">
       <view class="card-head">
-        <text class="card-title">{{item.title}}</text>
+        <view class="card-title-wrap">
+          <text class="post-tag post-tag-{{item.postType === '寻物' ? 'lost' : 'found'}}">{{item.postType}}</text>
+          <text class="card-title">{{item.title}}</text>
+        </view>
         <view class="status status-{{item.status === '已认领' ? 'done' : 'open'}}">
           {{item.status}}
         </view>
       </view>
+
+      <view wx:if="{{item.publisherStudentVerified}}" class="cert-row">
+        <text class="cert-badge">已通过学生认证</text>
+      </view>
+
+      <view wx:if="{{item.locationLabel}}" class="card-loc">{{item.locationLabel}}</view>
 
       <view class="card-desc">{{item.description}}</view>
 
@@ -44,10 +53,20 @@
           disabled="{{item.status === '已认领'}}"
           data-id="{{item.id}}"
           data-status="{{item.status}}"
+          data-post-type="{{item.postType}}"
           bindtap="onClaim">
-          {{item.status === '已认领' ? '已认领' : '认领'}}
+          {{item.status === '已认领' ? '已认领' : (item.postType === '寻物' ? '我捡到了' : '认领')}}
         </button>
       </view>
+    </view>
+  </view>
+
+  <view class="bottom-nav">
+    <view class="bottom-nav-item bottom-nav-item-accent" bindtap="goHome">
+      <text class="bottom-nav-text">首页</text>
+    </view>
+    <view class="bottom-nav-item" bindtap="goProfile">
+      <text class="bottom-nav-text">我的</text>
     </view>
   </view>
 </view>
