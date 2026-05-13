@@ -1,0 +1,260 @@
+{
+  "campusName": "华南师范大学（南海校区）",
+  "campusCode": "SCNU_NANHAI",
+  "remark": "以下为便于 MVP 整理的示例点位，真实楼栋名称请以校方公示为准，可直接改 JSON 扩展。",
+  "zones": [
+    {
+      "id": "teaching",
+      "name": "教学区",
+      "places": [
+        {
+          "id": "teaching_lib",
+          "name": "图书馆",
+          "latitude":23.146196,
+          "longitude": 113.026775,
+          "keywords": ["图书馆", "自习", "阅览室"]
+        },
+        {
+          "id": "teaching_main_a",
+          "name": "教学楼 A 栋",
+          "latitude": 23.147217,
+          "longitude": 113.027748,
+          "keywords": ["教学楼", "教A", "A栋", "上课"]
+        },
+        {
+          "id": "teaching_interenational_business",
+          "name": "国际商学院",
+          "latitude": 23.145345,
+          "longitude": 113.027158,
+          "keywords": ["教学楼", "教A", "A栋", "上课"]
+        },
+        {
+          "id": "teaching_main_b",
+          "name": "教学楼 B 栋",
+          "latitude": 23.146787,
+          "longitude": 113.027533,
+          "keywords": ["教学楼", "教B", "B栋"]
+        },
+        {
+          "id": "teaching_main_c",
+          "name": "教学楼 C 栋",
+          "latitude": 23.146523,
+          "longitude": 113.028116,
+          "keywords": ["教学楼", "教B", "B栋"]
+        },
+        {
+          "id": "teaching_lab",
+          "name": "实验楼",
+          "latitude": 23.145118,
+          "longitude": 113.027183,
+          "keywords": ["实验", "机房", "实验室"]
+        },
+        {
+          "id": "teaching_software",
+          "name": "软件学院",
+          "latitude": 23.144287,
+          "longitude": 113.027414,
+          "keywords": ["软件"]
+        },
+        {
+          "id": "teaching_Comprehensive",
+          "name": "综合楼",
+          "latitude": 23.145086,
+          "longitude": 113.027205,
+          "keywords": ["综合", "信息中心"]
+        },
+        {
+          "id": "teaching_admin",
+          "name": "行政楼 / 办公楼",
+          "latitude": 23.145568,
+          "longitude": 113.028159,
+          "keywords": ["行政", "办公", "教务处", "学工"]
+        }
+      ]
+    },
+    {
+      "id": "living",
+      "name": "生活区",
+      "places": [
+        {
+          "id": "living_canteen_1",
+          "name": "熹园",
+          "latitude": 23.146795,
+          "longitude": 113.02955,
+          "keywords": ["熹园", "食堂", "吃饭"]
+        },
+        
+        {
+          "id": "living_activity",
+          "name": "学生活动中心",
+          "latitude": 23.145978,
+          "longitude": 113.030237,
+          "keywords": ["学生活动", "礼堂", "活动室"]
+        },
+        {
+          "id": "living_post_office",
+          "name": "邮政 / 综合服务点",
+          "latitude": 23.148402,
+          "longitude": 113.030903,
+          "keywords": ["邮政", "信件"]
+        }
+      ]
+    },
+    {
+      "id": "sports",
+      "name": "运动区",
+      "places": [
+        {
+          "id": "sports_track",
+          "name": "田径场",
+          "latitude": 23.148611,
+          "longitude": 113.027691,
+          "keywords": ["操场", "跑道", "足球场"]
+        },
+        {
+          "id": "sports_gym",
+          "name": "体育馆",
+          "latitude": 23.148472,
+          "longitude": 113.02861,
+          "keywords": ["体育馆", "羽毛球", "室内"]
+        },
+        {
+          "id": "sports_basketball",
+          "name": "篮球场",
+          "latitude": 23.147781,
+          "longitude": 113.028606,
+          "keywords": ["篮球", "球场"]
+        },
+        {
+          "id": "sports_tennis",
+          "name": "乒乓球馆",
+          "latitude": 23.14858,
+          "longitude": 113.027055,
+          "keywords": ["乒乓球，匹克球"]
+        }
+      ]
+    },
+    {
+      "id": "dorm",
+      "name": "宿舍区",
+      "places": [
+        {
+          "id": "dorm_1",
+          "name": "学生公寓 A 栋",
+          "latitude": 23.146599,
+          "longitude": 113.029996,
+          "keywords": ["宿舍", "公寓", "A栋"]
+        },
+        {
+          "id": "dorm_2",
+          "name": "学生公寓 B 栋",
+          "latitude": 23.147425,
+          "longitude": 113.030192,
+          "keywords": ["宿舍", "公寓", "B栋"]
+        },
+        {
+          "id": "dorm_3",
+          "name": "学生公寓 C 栋",
+          "latitude": 23.147876,
+          "longitude": 113.030132,
+          "keywords": ["宿舍", "公寓", "C栋"]
+        },
+        {
+          "id": "dorm_4",
+          "name": "学生公寓 D 栋",
+          "latitude": 23.14788,
+          "longitude": 113.029705,
+          "keywords": ["宿舍", "公寓", "D栋"]
+        },
+        {
+          "id": "dorm_5",
+          "name": "学生公寓 E 栋",
+          "latitude": 23.148508,
+          "longitude": 113.029566,
+          "keywords": ["宿舍", "公寓", "E栋"]
+        },
+        {
+          "id": "dorm_6",
+          "name": "学生公寓 F 栋",
+          "latitude": 23.148239,
+          "longitude": 113.03032,
+          "keywords": ["宿舍", "公寓", "F栋"]
+        },
+        {
+          "id": "dorm_7",
+          "name": "学生公寓 G 栋",
+          "latitude": 23.148944,
+          "longitude": 113.031304,
+          "keywords": ["宿舍", "公寓", "G栋"]
+        },
+        {
+          "id": "dorm_8",
+          "name": "学生公寓 H 栋",
+          "latitude": 23.148846,
+          "longitude": 113.031661,
+          "keywords": ["宿舍", "公寓", "G栋"]
+        }
+
+      ]
+    },
+    {
+      "id": "commercial",
+      "name": "商业区",
+      "places": [
+        {
+          "id": "biz_gate_street",
+          "name": "校园商业街",
+          "latitude": 23.148434,
+          "longitude": 113.030892,
+          "keywords": ["商业街", "小店", "奶茶"]
+        },
+        {
+          "id": "biz_cainiao",
+          "name": "菜鸟驿站 / 快递中心",
+          "latitude": 23.148434,
+          "longitude": 113.030892,
+          "keywords": ["菜鸟", "快递", "取件", "驿站"]
+        },
+        {
+          "id": "biz_store",
+          "name": "校园超市 / 便利店",
+          "latitude": 23.147399,
+          "longitude": 113.029598,
+          "keywords": ["超市", "便利店", "小卖部"]
+        },
+        {
+          "id": "biz_print",
+          "name": "打印店 / 文印",
+          "latitude": 23.147354,
+          "longitude": 113.029382,
+          "keywords": ["打印", "复印", "论文"]
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "name": "华师大门",
+      "places": [
+        {
+          "id": "Southeast_Gate",
+          "name": "东南门",
+          "latitude": 23.144081,
+          "longitude": 113.028877,
+          "keywords": ["东南门", "东南门保安亭", "东南门外卖点", "东南门网约车点", "外卖"]
+        },
+        {
+          "id": "North_Gate",
+          "name": "北门",
+          "latitude": 23.148723,
+          "longitude": 113.029107,
+          "keywords": ["北门", "北门保安亭", "北门外卖点", "北门网约车点", "小吃集市"]
+        }
+      ]
+    }
+  ],
+  "mapDefaults": {
+    "latitude": 23.1465,
+    "longitude": 113.0285,
+    "scale": 18
+  }
+}

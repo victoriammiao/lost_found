@@ -1,0 +1,137 @@
+<!--pages/publish/publish.wxml-->
+<view class="container page-with-nav">
+  <view wx:if="{{draftEditId}}" class="draft-banner">正在编辑草稿 · ID {{draftEditId}}</view>
+
+  <view class="page-title">发布失物信息</view>
+  <view class="page-tip">请选择类型后如实填写，方便同学辨认寻物 / 招领</view>
+
+  <view class="form">
+    <view class="form-item">
+      <text class="label">类型</text>
+      <view class="type-row">
+        <view
+          class="type-opt {{postType === '寻物' ? 'type-opt-active' : ''}}"
+          bindtap="onPickPostType"
+          data-type="寻物"
+        >寻物启事（我丢了东西）</view>
+        <view
+          class="type-opt {{postType === '招领' ? 'type-opt-active' : ''}}"
+          bindtap="onPickPostType"
+          data-type="招领"
+        >失物招领（我捡到东西）</view>
+      </view>
+    </view>
+
+    <!-- 【新增】分类选择 -->
+    <view class="form-item">
+      <text class="label">失物分类</text>
+      <view class="category-list">
+        <view wx:for="{{categories}}"
+              wx:key="value"
+              class="cat-chip {{category === item.value ? 'cat-chip-active' : ''}}"
+              data-value="{{item.value}}"
+              bindtap="onSelectCategory">
+          <text class="cat-icon">{{item.icon}}</text>
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item loc-field">
+      <text class="label">关联地点（南海校区）</text>
+      <text class="loc-hint">输入关键词（如 图书馆、食堂、菜鸟），点选下方联想结果</text>
+      <button class="map-pick-btn" bindtap="goMapPick">地图选点（就近匹配标注）</button>
+      <input
+        class="input loc-input"
+        placeholder="输入关键词筛选地点…"
+        maxlength="40"
+        value="{{locationQuery}}"
+        bindfocus="onLocationFocus"
+        bindblur="onLocationBlur"
+        bindinput="onLocationInput"
+      />
+      <scroll-view
+        wx:if="{{locationPickerOpen && locationCandidates.length}}"
+        class="loc-suggest"
+        scroll-y="true"
+        catchtouchmove="noop"
+      >
+        <view
+          wx:for="{{locationCandidates}}"
+          wx:key="id"
+          class="loc-suggest-item"
+          catchtap="onPickLocation"
+          data-id="{{item.id}}"
+          data-label="{{item.label}}"
+        >
+          <text class="loc-suggest-main">{{item.label}}</text>
+          <text class="loc-suggest-sub">{{item.zoneName}}</text>
+        </view>
+      </scroll-view>
+      <view wx:if="{{locationLabel}}" class="loc-picked">
+        <text class="loc-picked-text">已选：{{locationLabel}}</text>
+        <text class="loc-picked-clear" catchtap="onClearLocation">清除</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">标题</text>
+      <input class="input"
+             placeholder="{{postType === '寻物' ? '例如：丢失黑色钱包一只' : '例如：在图书馆捡到校园卡'}}"
+             maxlength="30"
+             value="{{title}}"
+             bindinput="onInputTitle" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">描述</text>
+      <textarea class="textarea"
+                placeholder="请补充时间、地点、外观特征等"
+                maxlength="200"
+                value="{{description}}"
+                bindinput="onInputDescription" />
+    </view>
+
+    <!-- 【本次新增】图片选择区 -->
+    <view class="form-item">
+      <text class="label">图片 (可选, 仅支持单张 jpg/png)</text>
+      <text class="loc-hint">轻点预览图：从 JPEG 的 EXIF 读取 GPS 并匹配校区地点；长按：查看大图</text>
+
+      <!-- 未选图片: 显示"+ 选择图片"占位框 -->
+      <view wx:if="{{!imagePath}}" class="image-picker" bindtap="onChooseImage">
+        <text class="image-picker-plus">+</text>
+        <text class="image-picker-tip">选择图片</text>
+      </view>
+
+      <!-- 已选图片: 显示预览 + 右上角 × 删除按钮 -->
+      <view wx:else class="image-preview-wrap">
+        <image class="image-preview"
+               src="{{imagePath}}"
+               mode="aspectFill"
+               bindtap="onImageTapForGeo"
+               bindlongpress="onPreviewImage" />
+        <view class="image-delete" catchtap="onDeleteImage">×</view>
+      </view>
+    </view>
+
+    <view class="submit-row">
+      <button class="ghost-btn"
+              loading="{{loading}}"
+              disabled="{{loading}}"
+              bindtap="onSaveDraft">存草稿</button>
+      <button class="primary-btn primary-btn-inline"
+              loading="{{loading}}"
+              disabled="{{loading}}"
+              bindtap="onSubmit">{{draftEditId ? '正式发布' : '提交发布'}}</button>
+    </view>
+  </view>
+
+  <view class="bottom-nav">
+    <view class="bottom-nav-item" bindtap="goHome">
+      <text class="bottom-nav-text">首页</text>
+    </view>
+    <view class="bottom-nav-item bottom-nav-item-accent" bindtap="goProfile">
+      <text class="bottom-nav-text">个人主页</text>
+    </view>
+  </view>
+</view>

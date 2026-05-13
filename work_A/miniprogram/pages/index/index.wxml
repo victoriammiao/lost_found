@@ -1,0 +1,133 @@
+<!--pages/index/index.wxml-->
+<!--【升级】新增搜索框 + 分类筛选 + 状态筛选，保留 A 原有 postType 标签、学生认证、地点标签、底部导航-->
+<view class="container page-with-nav">
+  <!-- 顶部栏: 欢迎语 + 退出 -->
+  <view class="top-bar">
+    <view class="hello">Hi, {{username}}</view>
+    <text class="logout" bindtap="logout">退出</text>
+  </view>
+
+  <!-- 标题行 + 去发布按钮 -->
+  <view class="action-row">
+    <view class="page-title">公开失物列表</view>
+    <button class="publish-btn" size="mini" bindtap="goPublish">+ 去发布</button>
+  </view>
+
+  <!-- ====== 搜索框 ====== -->
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input class="search-input"
+           placeholder="搜索物品名称或描述"
+           placeholder-class="search-placeholder"
+           value="{{keyword}}"
+           confirm-type="search"
+           bindinput="onKeywordInput"
+           bindconfirm="onKeywordConfirm" />
+    <view wx:if="{{keyword}}" class="search-clear" catchtap="onClearKeyword">×</view>
+  </view>
+
+  <!-- ====== 分类筛选标签（横向滚动）====== -->
+  <scroll-view class="cat-scroll" scroll-x="{{true}}" enhanced show-scrollbar="{{false}}">
+    <view class="cat-list">
+      <view wx:for="{{categories}}"
+            wx:key="value"
+            class="cat-chip {{category === item.value ? 'cat-chip-active' : ''}}"
+            data-value="{{item.value}}"
+            bindtap="onCategoryTap">
+        <text class="cat-icon">{{item.icon}}</text>
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- ====== 状态分段控件 + 结果计数 ====== -->
+  <view class="status-row">
+    <view class="seg">
+      <view wx:for="{{statusOptions}}"
+            wx:key="value"
+            class="seg-item {{status === item.value ? 'seg-item-active' : ''}}"
+            data-value="{{item.value}}"
+            bindtap="onStatusTap">{{item.label}}</view>
+    </view>
+    <view class="result-count">
+      <block wx:if="{{!loading}}">共 {{items.length}} 条</block>
+      <block wx:else>加载中…</block>
+    </view>
+  </view>
+
+  <!-- 已激活筛选提示行 -->
+  <view wx:if="{{hasActiveFilter}}" class="active-filter-row">
+    <text class="active-filter-text">已筛选 · 点右侧重置</text>
+    <view class="reset-btn" bindtap="onResetFilter">重置</view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{items.length === 0 && !loading}}" class="empty">
+    <view class="empty-emoji">{{hasActiveFilter ? '🔍' : '📦'}}</view>
+    <view class="empty-text">
+      {{hasActiveFilter ? '没有匹配的失物，试试换个关键词或分类' : '暂无失物信息，点击右上「去发布」发布第一条吧'}}
+    </view>
+    <view wx:if="{{hasActiveFilter}}" class="empty-action" bindtap="onResetFilter">清空筛选</view>
+  </view>
+
+  <!-- ====== 失物卡片列表 ====== -->
+  <view class="list">
+    <view class="card" wx:for="{{items}}" wx:key="id">
+      <view class="card-head">
+        <view class="card-title-wrap">
+          <!-- 保留 A 原有 postType 标签 -->
+          <text class="post-tag post-tag-{{item.postType === '寻物' ? 'lost' : 'found'}}">{{item.postType}}</text>
+          <text class="card-title">{{item.title}}</text>
+        </view>
+        <view class="status status-{{item.status === '已认领' ? 'done' : 'open'}}">
+          {{item.status}}
+        </view>
+      </view>
+
+      <!-- 保留 A 原有学生认证标记 -->
+      <view wx:if="{{item.publisherStudentVerified}}" class="cert-row">
+        <text class="cert-badge">已通过学生认证</text>
+      </view>
+
+      <!-- 分类小标签（新增）-->
+      <view class="card-meta">
+        <view class="cat-tag">{{item.categoryIcon}} {{item.category}}</view>
+      </view>
+
+      <!-- 保留 A 原有地点标签 -->
+      <view wx:if="{{item.locationLabel}}" class="card-loc">{{item.locationLabel}}</view>
+
+      <view class="card-desc">{{item.description}}</view>
+
+      <image wx:if="{{item.imageUrl}}"
+             class="card-image"
+             src="{{item.imageUrl}}"
+             mode="aspectFill"
+             lazy-load="true" />
+
+      <view class="card-foot">
+        <text class="time">{{item.createTime}}</text>
+        <button
+          class="claim-btn claim-btn-{{item.status === '已认领' ? 'disabled' : 'active'}}"
+          size="mini"
+          disabled="{{item.status === '已认领'}}"
+          data-id="{{item.id}}"
+          data-status="{{item.status}}"
+          data-post-type="{{item.postType}}"
+          bindtap="onClaim">
+          {{item.status === '已认领' ? '已认领' : (item.postType === '寻物' ? '我捡到了' : '认领')}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 保留 A 原有底部导航 -->
+  <view class="bottom-nav">
+    <view class="bottom-nav-item bottom-nav-item-accent" bindtap="goHome">
+      <text class="bottom-nav-text">首页</text>
+    </view>
+    <view class="bottom-nav-item" bindtap="goProfile">
+      <text class="bottom-nav-text">我的</text>
+    </view>
+  </view>
+</view>

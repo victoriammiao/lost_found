@@ -1,0 +1,82 @@
+<view class="container">
+  <view class="header">
+    <text class="hello">Hi，{{username}}</text>
+    <text wx:if="{{profile && profile.studentVerified}}" class="badge-verified">已通过学生认证</text>
+  </view>
+
+  <view wx:if="{{profile && profile.isAdmin}}" class="card admin-entry">
+    <view class="card-title">管理员</view>
+    <button class="btn-admin" bindtap="goAdminVerify">学生认证审核</button>
+    <text class="admin-hint">查看并处理全校学生的认证申请（仅账号 000）</text>
+  </view>
+
+  <!-- 学生认证 -->
+  <view class="card">
+    <view class="card-title">学生认证</view>
+
+    <block wx:if="{{profile && profile.studentVerified}}">
+      <view class="verified-done">
+        <text class="verified-strong">已通过学生认证</text>
+        <view class="verified-tip">姓名：{{profile.realName}} · 学号：{{profile.studentNoMasked}}</view>
+      </view>
+    </block>
+
+    <block wx:elif="{{profile && profile.studentVerifyStatus === 'pending'}}">
+      <view class="pending-tip">您的申请已提交，正在等待管理员审核，请耐心等待。</view>
+    </block>
+
+    <block wx:else>
+      <view wx:if="{{profile && profile.studentVerifyStatus === 'rejected'}}" class="reject-tip">上次申请未通过，可修改信息后重新提交。</view>
+
+      <view class="form-row">
+        <text class="label">真实姓名</text>
+        <input class="input" placeholder="与学籍一致" value="{{verifyName}}" bindinput="onVerifyName" />
+      </view>
+      <view class="form-row">
+        <text class="label">学号</text>
+        <input class="input" type="number" placeholder="学号" value="{{verifyNo}}" bindinput="onVerifyNo" />
+      </view>
+      <button class="btn-verify" loading="{{verifyLoading}}" disabled="{{verifyLoading}}" bindtap="onSubmitVerify">提交认证申请</button>
+    </block>
+  </view>
+
+  <!-- 我的发布 -->
+  <view class="card">
+    <view class="card-title row-between">
+      <text>我的发布</text>
+      <text class="sub">未认领前可删除</text>
+    </view>
+    <view wx:if="{{published.length === 0}}" class="empty">暂无已发布内容</view>
+    <view wx:for="{{published}}" wx:key="id" class="item-row">
+      <view class="item-main">
+        <view class="item-tags">
+          <text class="post-tag post-tag-{{item.postType === '寻物' ? 'lost' : 'found'}}">{{item.postType}}</text>
+          <text wx:if="{{item.publisherStudentVerified}}" class="mini-cert">学生认证</text>
+        </view>
+        <text class="item-title">{{item.title}}</text>
+        <text wx:if="{{item.locationLabel}}" class="item-loc">{{item.locationLabel}}</text>
+        <text class="item-meta">{{item.createTime}} · {{item.status}}</text>
+      </view>
+      <button class="btn-del" size="mini" data-id="{{item.id}}" bindtap="onDeletePublished">删除</button>
+    </view>
+  </view>
+
+  <!-- 草稿箱 -->
+  <view class="card">
+    <view class="card-title">草稿箱</view>
+    <view wx:if="{{drafts.length === 0}}" class="empty">暂无草稿</view>
+    <view wx:for="{{drafts}}" wx:key="id" class="item-row">
+      <view class="item-main" bindtap="onEditDraft" data-id="{{item.id}}">
+        <text class="item-title">{{item.title}}</text>
+        <text wx:if="{{item.locationLabel}}" class="item-loc">{{item.locationLabel}}</text>
+        <text class="item-meta">{{item.createTime}}</text>
+      </view>
+      <button class="btn-del" size="mini" data-id="{{item.id}}" catchtap="onDeleteDraft">删除</button>
+    </view>
+  </view>
+
+  <view class="footer-actions">
+    <button class="btn-outline" bindtap="goPublish">去发布</button>
+    <button class="btn-outline" bindtap="goHome">回首页</button>
+  </view>
+</view>
