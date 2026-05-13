@@ -3,6 +3,12 @@
   <view class="title">校园失物招领</view>
   <view class="subtitle">登录后使用</view>
 
+  <view class="api-debug" wx:if="{{apiBase}}">
+    <text class="api-debug-label">当前接口</text>
+    <text class="api-debug-url">{{apiBase}}</text>
+    <text class="api-debug-tip">校园网：ipconfig 填 LAN_IPV4；与电脑同网。若仍失败多为 AP 隔离，在 config.js 填 PUBLIC_BASE_URL（如 ngrok https）或控制台 dev_base_url。预览…打开调试。</text>
+  </view>
+
   <view class="form">
     <view class="form-item">
       <text class="label">账号</text>

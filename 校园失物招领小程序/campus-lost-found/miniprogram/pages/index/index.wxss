@@ -40,7 +40,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10rpx 10rpx 20rpx;
+  padding: 10rpx 16rpx 16rpx;
 }
 .hello {
   font-size: 28rpx;
@@ -51,31 +51,113 @@
   color: #3a7afe;
 }
 
-.action-row {
+.search-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  margin-bottom: 20rpx;
+  gap: 16rpx;
+  padding: 0 20rpx 16rpx;
 }
-.page-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #222;
-  text-align: center;
+.search-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: #f0f2f6;
+  border-radius: 999rpx;
+  padding: 0 24rpx;
+  height: 72rpx;
+  border: 2rpx solid #e4e7ec;
 }
-.publish-btn {
-  margin-top: 20rpx;
+.search-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 72rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+.publish-mini {
+  flex-shrink: 0;
   background: #3a7afe !important;
   color: #fff !important;
   border: none !important;
-  font-size: 26rpx !important;
+  font-size: 24rpx !important;
+  margin: 0 !important;
 }
 
-.empty {
+.status-tabs,
+.loc-tabs {
+  width: 100%;
+  white-space: nowrap;
+  margin-bottom: 8rpx;
+}
+.tabs-row {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 20rpx 12rpx;
+  box-sizing: border-box;
+}
+.tabs-row-loc {
+  padding-bottom: 16rpx;
+}
+
+.chip {
+  flex-shrink: 0;
+  padding: 12rpx 28rpx;
+  margin-right: 16rpx;
+  font-size: 26rpx;
+  color: #555;
+  background: #fff;
+  border-radius: 999rpx;
+  border: 2rpx solid #e4e7ec;
+}
+.chip:last-child {
+  margin-right: 0;
+}
+.chip-on {
+  color: #fff;
+  background: #3a7afe;
+  border-color: #3a7afe;
+}
+.chip-status {
+  font-weight: 500;
+}
+.chip-loc {
+  font-size: 24rpx;
+  padding: 10rpx 22rpx;
+}
+
+.empty-banner {
+  margin: 0 20rpx 16rpx;
+  padding: 18rpx 22rpx;
   text-align: center;
-  color: #aaa;
-  font-size: 28rpx;
-  margin-top: 120rpx;
+  color: #888;
+  font-size: 26rpx;
+  line-height: 1.45;
+  background: #fff9e6;
+  border-radius: 12rpx;
+  border: 1rpx solid #ffe0a3;
+}
+.empty-banner-muted {
+  background: #f5f6fa;
+  border-color: #e4e7ec;
+  color: #777;
+}
+
+.feed {
+  padding: 0 20rpx;
+}
+
+.section-empty {
+  font-size: 26rpx;
+  color: #bbb;
+  text-align: center;
+  padding: 40rpx 0;
 }
 
 .list {
@@ -173,7 +255,6 @@
   margin-bottom: 16rpx;
 }
 
-/* 【本次新增】失物图片, 仅在 imageUrl 非空时渲染 */
 .card-image {
   width: 100%;
   height: 320rpx;

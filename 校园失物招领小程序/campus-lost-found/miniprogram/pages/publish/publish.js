@@ -18,6 +18,7 @@ Page({
     locationCandidates: [],
     title: "",
     description: "",
+    contact: "",
     imagePath: "",
     /** 用户新选的本地临时文件，需上传 */
     pickedLocalPath: "",
@@ -31,6 +32,7 @@ Page({
   },
 
   onLoad(options) {
+    this._pageDestroyed = false;
     const raw = options && options.draftId;
     if (raw) {
       const id = parseInt(raw, 10);
@@ -38,6 +40,15 @@ Page({
         this.setData({ draftEditId: id });
         this.loadDraft(id);
       }
+    }
+  },
+
+  onUnload() {
+    this._pageDestroyed = true;
+    this._clearBlurTimer();
+    if (this._postSubmitTimer) {
+      clearTimeout(this._postSubmitTimer);
+      this._postSubmitTimer = null;
     }
   },
 
@@ -50,6 +61,7 @@ Page({
     wx.getLocation({
       type: "gcj02",
       success: (res) => {
+        if (this._pageDestroyed) return;
         this.setData({
           publishLat: res.latitude,
           publishLng: res.longitude,
@@ -64,13 +76,15 @@ Page({
       lp.ts &&
       Date.now() - lp.ts < 120000
     ) {
-      this.setData({
-        locationId: lp.id,
-        locationLabel: lp.label,
-        locationQuery: lp.label,
-        locationPickerOpen: false,
-        locationCandidates: [],
-      });
+      if (!this._pageDestroyed) {
+        this.setData({
+          locationId: lp.id,
+          locationLabel: lp.label,
+          locationQuery: lp.label,
+          locationPickerOpen: false,
+          locationCandidates: [],
+        });
+      }
       wx.removeStorageSync("lastMapPick");
     }
     this.ensureLocations();
@@ -91,7 +105,7 @@ Page({
       url: "/pages/map-picker/map-picker",
       events: {
         locationPicked: (data) => {
-          if (!data || !data.id || !data.label) return;
+          if (this._pageDestroyed || !data || !data.id || !data.label) return;
           this.setData({
             locationId: data.id,
             locationLabel: data.label,
@@ -106,8 +120,10 @@ Page({
 
   async loadDraft(id) {
     await this.ensureLocations();
+    if (this._pageDestroyed) return;
     try {
       const res = await request({ url: "/items/" + id, method: "GET" });
+      if (this._pageDestroyed) return;
       if (res.code !== 0 || !res.data) {
         wx.showToast({ title: (res && res.message) || "加载草稿失败", icon: "none" });
         return;
@@ -115,7 +131,7 @@ Page({
       const it = res.data;
       if (!it.isDraft) {
         wx.showToast({ title: "该条已是正式发布", icon: "none" });
-        this.setData({ draftEditId: null });
+        if (!this._pageDestroyed) this.setData({ draftEditId: null });
         return;
       }
       let rel = it.imageUrl || "";
@@ -131,9 +147,11 @@ Page({
         it.publishLongitude != null && it.publishLongitude !== ""
           ? Number(it.publishLongitude)
           : null;
+      if (this._pageDestroyed) return;
       this.setData({
         title: it.title || "",
         description: it.description || "",
+        contact: it.contact || "",
         postType: it.postType || "招领",
         locationId: it.locationId || "",
         locationLabel: it.locationLabel || "",
@@ -161,9 +179,11 @@ Page({
       });
       if (res.code === 0 && res.data) {
         this._placesFlat = buildFlatPlaces(res.data);
-        this.setData({
-          campusName: res.data.campusName || "",
-        });
+        if (!this._pageDestroyed) {
+          this.setData({
+            campusName: res.data.campusName || "",
+          });
+        }
       } else {
         wx.showToast({
           title: (res && res.message) || "地点库接口返回异常",
@@ -214,8 +234,9 @@ Page({
   onLocationBlur() {
     this._clearBlurTimer();
     this._locBlurTimer = setTimeout(() => {
-      this.setData({ locationPickerOpen: false });
       this._locBlurTimer = null;
+      if (this._pageDestroyed) return;
+      this.setData({ locationPickerOpen: false });
     }, 180);
   },
 
@@ -271,6 +292,10 @@ Page({
     this.setData({ description: e.detail.value });
   },
 
+  onInputContact(e) {
+    this.setData({ contact: e.detail.value });
+  },
+
   onChooseImage() {
     const self = this;
     wx.chooseMedia({
@@ -279,6 +304,7 @@ Page({
       sourceType: ["album", "camera"],
       sizeType: ["compressed"],
       success(res) {
+        if (self._pageDestroyed) return;
         const file = res.tempFiles && res.tempFiles[0];
         if (file && file.tempFilePath) {
           self.setData({
@@ -359,6 +385,7 @@ Page({
       return;
     }
     const p = nearest.place;
+    if (this._pageDestroyed) return;
     this.setData({
       locationId: p.id,
       locationLabel: p.label,
@@ -408,7 +435,7 @@ Page({
   },
 
   async onSaveDraft() {
-    const { title, description, postType, locationId, draftEditId } = this.data;
+    const { title, description, contact, postType, locationId, draftEditId } = this.data;
     if (!title.trim() && !description.trim()) {
       wx.showToast({ title: "请至少填写标题或描述", icon: "none" });
       return;
@@ -417,8 +444,9 @@ Page({
     this.setData({ loading: true });
     try {
       let imageUrl = await this.resolveImageUrlForSubmit();
+      if (this._pageDestroyed) return;
       if (imageUrl === null) {
-        this.setData({ loading: false });
+        if (!this._pageDestroyed) this.setData({ loading: false });
         return;
       }
 
@@ -426,6 +454,7 @@ Page({
         {
           title: title.trim(),
           description: description.trim(),
+          contact: (contact || "").trim(),
           imageUrl: imageUrl || "",
           postType: postType,
           locationId: locationId || "",
@@ -443,6 +472,7 @@ Page({
             {
               title: payload.title,
               description: payload.description,
+              contact: payload.contact,
               imageUrl: payload.imageUrl,
               postType: payload.postType,
               locationId: payload.locationId,
@@ -458,7 +488,8 @@ Page({
         });
       }
 
-      if (res.code === 0) {
+      if (this._pageDestroyed) return;
+      if (Number(res.code) === 0) {
         const wasEdit = !!draftEditId;
         wx.showToast({ title: wasEdit ? "草稿已更新" : "草稿已保存", icon: "success" });
         const d = res.data || {};
@@ -474,18 +505,20 @@ Page({
             preview = config.baseUrl + img;
           }
         }
-        this.setData({
-          draftEditId: nid,
-          pickedLocalPath: "",
-          draftRemoteImage: remoteRel,
-          imagePath: preview || this.data.imagePath,
-        });
+        if (!this._pageDestroyed) {
+          this.setData({
+            draftEditId: nid,
+            pickedLocalPath: "",
+            draftRemoteImage: remoteRel,
+            imagePath: preview || this.data.imagePath,
+          });
+        }
       } else {
         wx.showToast({ title: res.message || "保存失败", icon: "none" });
       }
     } catch (e) {
     } finally {
-      this.setData({ loading: false });
+      if (!this._pageDestroyed) this.setData({ loading: false });
     }
   },
 
@@ -493,6 +526,7 @@ Page({
     const {
       title,
       description,
+      contact,
       postType,
       locationId,
       draftEditId,
@@ -511,13 +545,18 @@ Page({
       wx.showToast({ title: "请输入描述", icon: "none" });
       return;
     }
+    if (!(contact || "").trim() || (contact || "").trim().length < 3) {
+      wx.showToast({ title: "请填写联系方式（至少3字）", icon: "none" });
+      return;
+    }
 
     this.setData({ loading: true });
 
     try {
       let imageUrl = await this.resolveImageUrlForSubmit();
+      if (this._pageDestroyed) return;
       if (imageUrl === null) {
-        this.setData({ loading: false });
+        if (!this._pageDestroyed) this.setData({ loading: false });
         return;
       }
 
@@ -530,6 +569,7 @@ Page({
             {
               title: title.trim(),
               description: description.trim(),
+              contact: (contact || "").trim(),
               imageUrl: imageUrl || "",
               postType: postType,
               locationId: locationId,
@@ -545,6 +585,7 @@ Page({
             {
               title: title.trim(),
               description: description.trim(),
+              contact: (contact || "").trim(),
               imageUrl: imageUrl || "",
               postType: postType,
               locationId: locationId,
@@ -554,25 +595,35 @@ Page({
         });
       }
 
-      if (res.code === 0) {
-        wx.showToast({ title: "发布成功", icon: "success" });
-        this.setData({
-          title: "",
-          description: "",
-          postType: "招领",
-          imagePath: "",
-          pickedLocalPath: "",
-          draftRemoteImage: "",
-          draftEditId: null,
-          locationQuery: "",
-          locationId: "",
-          locationLabel: "",
-          locationCandidates: [],
-          locationPickerOpen: false,
-          publishLat: null,
-          publishLng: null,
+      if (this._pageDestroyed) return;
+      if (Number(res.code) === 0) {
+        wx.showToast({
+          title: res.message || "已提交审核",
+          icon: "success",
         });
-        setTimeout(() => {
+        if (!this._pageDestroyed) {
+          this.setData({
+            title: "",
+            description: "",
+            contact: "",
+            postType: "招领",
+            imagePath: "",
+            pickedLocalPath: "",
+            draftRemoteImage: "",
+            draftEditId: null,
+            locationQuery: "",
+            locationId: "",
+            locationLabel: "",
+            locationCandidates: [],
+            locationPickerOpen: false,
+            publishLat: null,
+            publishLng: null,
+          });
+        }
+        if (this._postSubmitTimer) clearTimeout(this._postSubmitTimer);
+        this._postSubmitTimer = setTimeout(() => {
+          this._postSubmitTimer = null;
+          if (this._pageDestroyed) return;
           wx.navigateBack({
             fail: () => wx.reLaunch({ url: "/pages/index/index" }),
           });
@@ -582,7 +633,7 @@ Page({
       }
     } catch (e) {
     } finally {
-      this.setData({ loading: false });
+      if (!this._pageDestroyed) this.setData({ loading: false });
     }
   },
 });

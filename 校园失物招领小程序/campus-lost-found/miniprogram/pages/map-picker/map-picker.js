@@ -16,6 +16,8 @@ Page({
   },
 
   onLoad() {
+    this._pageDestroyed = false;
+    this._backTimer = null;
     try {
       if (this.getOpenerEventChannel) {
         this._eventChannel = this.getOpenerEventChannel();
@@ -24,6 +26,14 @@ Page({
       this._eventChannel = null;
     }
     this.loadMapData();
+  },
+
+  onUnload() {
+    this._pageDestroyed = true;
+    if (this._backTimer) {
+      clearTimeout(this._backTimer);
+      this._backTimer = null;
+    }
   },
 
   onReady() {
@@ -37,9 +47,14 @@ Page({
         method: "GET",
         failToast: false,
       });
+      if (this._pageDestroyed) return;
       if (res.code !== 0 || !res.data) {
         wx.showToast({ title: (res && res.message) || "加载失败", icon: "none" });
-        setTimeout(() => wx.navigateBack(), 400);
+        if (this._backTimer) clearTimeout(this._backTimer);
+        this._backTimer = setTimeout(() => {
+          this._backTimer = null;
+          if (!this._pageDestroyed) wx.navigateBack();
+        }, 400);
         return;
       }
       const payload = res.data;
@@ -80,6 +95,7 @@ Page({
         title: p.placeName || "",
       }));
 
+      if (this._pageDestroyed) return;
       this.setData({
         latitude: lat,
         longitude: lng,
@@ -92,7 +108,11 @@ Page({
         e &&
         (e.message === "未登录" || e.message === "登录已失效")
       ) {
-        setTimeout(() => wx.navigateBack(), 400);
+        if (this._backTimer) clearTimeout(this._backTimer);
+        this._backTimer = setTimeout(() => {
+          this._backTimer = null;
+          if (!this._pageDestroyed) wx.navigateBack();
+        }, 400);
         return;
       }
       wx.showToast({
@@ -100,7 +120,11 @@ Page({
         icon: "none",
         duration: 3200,
       });
-      setTimeout(() => wx.navigateBack(), 400);
+      if (this._backTimer) clearTimeout(this._backTimer);
+      this._backTimer = setTimeout(() => {
+        this._backTimer = null;
+        if (!this._pageDestroyed) wx.navigateBack();
+      }, 400);
     }
   },
 
@@ -159,7 +183,7 @@ Page({
     if (top.type === "end" && sc != null) {
       const s = Math.round(Number(sc));
       if (s >= 3 && s <= 20 && s !== this.data.scale) {
-        this.setData({ scale: s });
+        if (!this._pageDestroyed) this.setData({ scale: s });
       }
     }
   },
@@ -169,6 +193,11 @@ Page({
     if (this._zoomInFlight) return;
     this._zoomInFlight = true;
     const run = () => {
+      if (this._pageDestroyed) {
+        this._zoomInFlight = false;
+        this._zoomPendingDelta = 0;
+        return;
+      }
       const d = this._zoomPendingDelta;
       this._zoomPendingDelta = 0;
       if (d === 0) {
@@ -180,6 +209,10 @@ Page({
       const fallback = Math.round(this.data.scale || 18);
       ctx.getScale({
         success: (res) => {
+          if (this._pageDestroyed) {
+            this._zoomInFlight = false;
+            return;
+          }
           let cur = res && typeof res.scale === "number" ? res.scale : fallback;
           if (isNaN(cur)) cur = fallback;
           cur = Math.round(cur);
@@ -187,6 +220,10 @@ Page({
           this.setData({ scale: s }, run);
         },
         fail: () => {
+          if (this._pageDestroyed) {
+            this._zoomInFlight = false;
+            return;
+          }
           const s = Math.min(20, Math.max(3, fallback + d));
           this.setData({ scale: s }, run);
         },

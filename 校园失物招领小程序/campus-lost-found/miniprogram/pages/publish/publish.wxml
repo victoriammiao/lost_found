@@ -3,7 +3,7 @@
   <view wx:if="{{draftEditId}}" class="draft-banner">正在编辑草稿 · ID {{draftEditId}}</view>
 
   <view class="page-title">发布失物信息</view>
-  <view class="page-tip">请选择类型后如实填写，方便同学辨认寻物 / 招领</view>
+  <view class="page-tip">提交后需管理员审核通过才会出现在首页；类型：寻物（丢失）/ 招领（捡到）</view>
 
   <view class="form">
     <view class="form-item">
@@ -75,6 +75,17 @@
                 maxlength="200"
                 value="{{description}}"
                 bindinput="onInputDescription" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">联系方式</text>
+      <text class="loc-hint">正式发布必填；仅管理员与你自己在「我的」中可见，不会在首页公开展示</text>
+      <input class="input"
+             type="text"
+             placeholder="手机或微信号等（至少3字）"
+             maxlength="40"
+             value="{{contact}}"
+             bindinput="onInputContact" />
     </view>
 
     <!-- 【本次新增】图片选择区 -->

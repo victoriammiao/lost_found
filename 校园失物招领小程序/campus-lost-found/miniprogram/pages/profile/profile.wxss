@@ -12,12 +12,21 @@
   font-size: 28rpx !important;
   border-radius: 12rpx !important;
 }
-.admin-hint {
+.philosophy-block {
+  margin-bottom: 24rpx;
+}
+.philosophy-title {
   display: block;
-  font-size: 22rpx;
-  color: #888;
-  margin-top: 16rpx;
-  line-height: 1.4;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a3a8a;
+  margin-bottom: 12rpx;
+}
+.philosophy-body {
+  display: block;
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.55;
 }
 
 .verified-done {
@@ -170,6 +179,33 @@
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
 }
+
+.review-badge {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+}
+.review-pending {
+  color: #e65100;
+  background: #fff3e0;
+}
+.review-approved {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+.review-rejected {
+  color: #c62828;
+  background: #ffebee;
+}
+
+.item-contact {
+  display: block;
+  font-size: 24rpx;
+  color: #555;
+  margin-top: 8rpx;
+  word-break: break-all;
+}
+
 .item-title {
   font-size: 28rpx;
   font-weight: 500;

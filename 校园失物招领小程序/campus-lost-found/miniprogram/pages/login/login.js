@@ -1,14 +1,45 @@
 // pages/login/login.js
 const { request } = require("../../utils/request.js");
+const apiConfig = require("../../utils/config.js");
 
 Page({
   data: {
     username: "",
     password: "",
     loading: false,
+    apiBase: "",
+  },
+
+  onLoad() {
+    this._pageDestroyed = false;
+    this._loginNavTimer = null;
+    try {
+      const ev = wx.getAccountInfoSync().miniProgram.envVersion;
+      if (ev === "develop" || ev === "trial") {
+        this.setData({ apiBase: apiConfig.baseUrl });
+      }
+    } catch (e) {
+      this.setData({ apiBase: apiConfig.baseUrl });
+    }
+  },
+
+  onUnload() {
+    this._pageDestroyed = true;
+    if (this._loginNavTimer) {
+      clearTimeout(this._loginNavTimer);
+      this._loginNavTimer = null;
+    }
   },
 
   onShow() {
+    try {
+      const ev = wx.getAccountInfoSync().miniProgram.envVersion;
+      if (ev === "develop" || ev === "trial") {
+        this.setData({ apiBase: apiConfig.baseUrl });
+      }
+    } catch (e) {
+      this.setData({ apiBase: apiConfig.baseUrl });
+    }
     // 如果已经登录过, 直接跳首页
     const token = wx.getStorageSync("token");
     if (token) {
@@ -43,7 +74,10 @@ Page({
         wx.setStorageSync("token", res.token);
         wx.setStorageSync("username", res.username);
         wx.showToast({ title: "登录成功", icon: "success" });
-        setTimeout(() => {
+        if (this._loginNavTimer) clearTimeout(this._loginNavTimer);
+        this._loginNavTimer = setTimeout(() => {
+          this._loginNavTimer = null;
+          if (this._pageDestroyed) return;
           wx.reLaunch({ url: "/pages/index/index" });
         }, 500);
       } else {
@@ -52,7 +86,7 @@ Page({
     } catch (e) {
       // request 内部已提示
     } finally {
-      this.setData({ loading: false });
+      if (!this._pageDestroyed) this.setData({ loading: false });
     }
   },
 

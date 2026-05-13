@@ -4,6 +4,7 @@
     "pages/register/register",
     "pages/index/index",
     "pages/publish/publish",
+    "pages/clue-submit/clue-submit",
     "pages/profile/profile",
     "pages/admin/admin",
     "pages/map-picker/map-picker"

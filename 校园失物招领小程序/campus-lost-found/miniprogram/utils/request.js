@@ -33,11 +33,13 @@ function request({
       header["Authorization"] = token;
     }
 
+    const fullUrl = config.baseUrl + url;
     wx.request({
-      url: config.baseUrl + url,
+      url: fullUrl,
       method,
       data,
       header,
+      timeout: 20000,
       success: (res) => {
         // 后端返回 401 时统一踢回登录页
         if (res.statusCode === 401) {
@@ -50,8 +52,15 @@ function request({
         resolve(res.data);
       },
       fail: (err) => {
+        const hint = hintFromRequestFail(err);
+        const errMsg = (err && err.errMsg) || "";
+        console.error("[request fail]", fullUrl, errMsg, err);
         if (failToast) {
-          wx.showToast({ title: "网络异常, 请检查后端是否启动", icon: "none" });
+          wx.showToast({
+            title: hint.length > 36 ? hint.slice(0, 36) + "…" : hint,
+            icon: "none",
+            duration: 3500,
+          });
         }
         reject(err);
       },
@@ -69,9 +78,12 @@ function hintFromRequestFail(err) {
     return "请求超时：检查电脑/手机与后端是否同一网络、防火墙是否放行端口";
   }
   if (m.indexOf("127.0.0.1") !== -1 || m.indexOf("localhost") !== -1) {
-    return "真机无法访问本机 127.0.0.1：请把 utils/config.js 的 baseUrl 改成电脑的局域网 IP";
+    return "真机勿用127：改 config.js 的 LAN_IPV4 或 wx.setStorageSync dev_base_url";
   }
-  return "无法连接后端：先在本机启动 Flask；真机预览时 baseUrl 必须用局域网 IP（勿用 127.0.0.1）";
+  if (m.indexOf("fail") !== -1 && (m.indexOf("connect") !== -1 || m.indexOf("CONNECTION") !== -1)) {
+    return "连不上：开 Flask；ipconfig 改 LAN；防火墙放行5000；校园网 AP 隔离请设 PUBLIC_BASE_URL/ngrok";
+  }
+  return "无法连接后端：启动 Flask；校园网改 IP 或隧道；预览…打开调试";
 }
 
 /**
@@ -100,8 +112,9 @@ function uploadFile({ url, filePath, name = "file", formData = {}, auth = true }
       header["Authorization"] = token;
     }
 
+    const fullUrl = config.baseUrl + url;
     wx.uploadFile({
-      url: config.baseUrl + url,
+      url: fullUrl,
       filePath,
       name,
       header,
@@ -126,7 +139,13 @@ function uploadFile({ url, filePath, name = "file", formData = {}, auth = true }
         resolve(parsed);
       },
       fail: (err) => {
-        wx.showToast({ title: "上传失败, 请检查后端是否启动", icon: "none" });
+        const hint = hintFromRequestFail(err);
+        console.error("[uploadFile fail]", fullUrl, (err && err.errMsg) || "", err);
+        wx.showToast({
+          title: hint.length > 36 ? hint.slice(0, 36) + "…" : hint,
+          icon: "none",
+          duration: 3500,
+        });
         reject(err);
       },
     });

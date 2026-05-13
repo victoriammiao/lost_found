@@ -8,6 +8,19 @@ Page({
     loading: false,
   },
 
+  onLoad() {
+    this._pageDestroyed = false;
+    this._navTimer = null;
+  },
+
+  onUnload() {
+    this._pageDestroyed = true;
+    if (this._navTimer) {
+      clearTimeout(this._navTimer);
+      this._navTimer = null;
+    }
+  },
+
   onInputUsername(e) {
     this.setData({ username: e.detail.value });
   },
@@ -37,7 +50,10 @@ Page({
       });
       if (res.code === 0) {
         wx.showToast({ title: "注册成功", icon: "success" });
-        setTimeout(() => {
+        if (this._navTimer) clearTimeout(this._navTimer);
+        this._navTimer = setTimeout(() => {
+          this._navTimer = null;
+          if (this._pageDestroyed) return;
           // 注册后跳回登录页
           wx.navigateBack({
             fail: () => wx.reLaunch({ url: "/pages/login/login" }),
@@ -49,7 +65,7 @@ Page({
     } catch (e) {
       // request 已处理
     } finally {
-      this.setData({ loading: false });
+      if (!this._pageDestroyed) this.setData({ loading: false });
     }
   },
 

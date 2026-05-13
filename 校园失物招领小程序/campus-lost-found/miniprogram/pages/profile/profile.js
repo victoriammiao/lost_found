@@ -4,13 +4,28 @@ const config = require("../../utils/config.js");
 Page({
   data: {
     username: "",
-    profile: null,
+    // 避免 null 时 WXML 对部分字段求值异常；接口返回后再覆盖
+    profile: {
+      isAdmin: false,
+      studentVerified: false,
+      studentVerifyStatus: "none",
+      realName: "",
+      studentNoMasked: "",
+    },
     verifyName: "",
     verifyNo: "",
     verifyLoading: false,
     published: [],
     drafts: [],
     loading: false,
+  },
+
+  onLoad() {
+    this._pageDestroyed = false;
+  },
+
+  onUnload() {
+    this._pageDestroyed = true;
   },
 
   onShow() {
@@ -24,27 +39,30 @@ Page({
   },
 
   async loadAll() {
-    this.setData({ loading: true });
+    if (!this._pageDestroyed) this.setData({ loading: true });
     try {
-      await Promise.all([
-        this.loadProfile(),
-        this.loadPublished(),
-        this.loadDrafts(),
-      ]);
+      await this.loadProfile();
+      if (this._pageDestroyed) return;
+      if (this.data.profile && this.data.profile.isAdmin) {
+        if (!this._pageDestroyed) this.setData({ published: [], drafts: [] });
+        return;
+      }
+      await Promise.all([this.loadPublished(), this.loadDrafts()]);
     } finally {
-      this.setData({ loading: false });
+      if (!this._pageDestroyed) this.setData({ loading: false });
     }
   },
 
   async loadProfile() {
     try {
       const res = await request({ url: "/profile", method: "GET" });
-      if (res.code === 0 && res.data) {
+      if (this._pageDestroyed) return;
+      if (Number(res.code) === 0 && res.data) {
         const d = res.data;
         if (!d.studentVerifyStatus) {
           d.studentVerifyStatus = d.studentVerified ? "approved" : "none";
         }
-        this.setData({ profile: d });
+        if (!this._pageDestroyed) this.setData({ profile: d });
       }
     } catch (e) {}
   },
@@ -57,11 +75,18 @@ Page({
           ? it.imageUrl
           : config.baseUrl + it.imageUrl;
       }
+      const rs = String(it.reviewStatus || "approved").toLowerCase();
+      let reviewLabel = "已上线";
+      if (rs === "pending") reviewLabel = "待审核";
+      else if (rs === "rejected") reviewLabel = "未通过";
       return Object.assign({}, it, {
         imageUrl: fullUrl,
         postType: it.postType || "招领",
         locationLabel: it.locationLabel || "",
         publisherStudentVerified: !!it.publisherStudentVerified,
+        reviewLabel,
+        reviewStatus: rs,
+        contact: (it.contact || "").trim(),
       });
     });
   },
@@ -73,8 +98,11 @@ Page({
         method: "GET",
         data: { draft: "0" },
       });
-      if (res.code === 0) {
-        this.setData({ published: this.mapItems(res.data || []) });
+      if (this._pageDestroyed) return;
+      if (Number(res.code) === 0) {
+        if (!this._pageDestroyed) {
+          this.setData({ published: this.mapItems(res.data || []) });
+        }
       }
     } catch (e) {}
   },
@@ -86,8 +114,11 @@ Page({
         method: "GET",
         data: { draft: "1" },
       });
-      if (res.code === 0) {
-        this.setData({ drafts: this.mapItems(res.data || []) });
+      if (this._pageDestroyed) return;
+      if (Number(res.code) === 0) {
+        if (!this._pageDestroyed) {
+          this.setData({ drafts: this.mapItems(res.data || []) });
+        }
       }
     } catch (e) {}
   },
@@ -131,7 +162,7 @@ Page({
       }
     } catch (e) {
     } finally {
-      this.setData({ verifyLoading: false });
+      if (!this._pageDestroyed) this.setData({ verifyLoading: false });
     }
   },
 

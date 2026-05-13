@@ -11,7 +11,35 @@
   color: #888;
   text-align: center;
   margin-top: 16rpx;
-  margin-bottom: 60rpx;
+  margin-bottom: 24rpx;
+}
+
+.api-debug {
+  margin: 0 32rpx 28rpx;
+  padding: 20rpx 24rpx;
+  background: #f0f4ff;
+  border-radius: 12rpx;
+  border: 1rpx solid #d6e0ff;
+}
+.api-debug-label {
+  display: block;
+  font-size: 22rpx;
+  color: #5a6fa8;
+  margin-bottom: 8rpx;
+}
+.api-debug-url {
+  display: block;
+  font-size: 24rpx;
+  color: #1a3a8a;
+  word-break: break-all;
+  line-height: 1.4;
+}
+.api-debug-tip {
+  display: block;
+  font-size: 22rpx;
+  color: #666;
+  margin-top: 12rpx;
+  line-height: 1.45;
 }
 
 .form {
