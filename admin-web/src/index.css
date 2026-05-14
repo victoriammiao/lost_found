@@ -1,0 +1,315 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 登录页面 - 微信小程序蓝色系风格 */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+}
+
+.login-card {
+  width: 400px;
+  padding: 40px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(24, 144, 255, 0.3);
+}
+
+.login-card h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1890ff;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* 管理后台布局 */
+.admin-layout {
+  min-height: 100vh;
+}
+
+/* 侧边栏 - 蓝色系主题 */
+.admin-sider {
+  background: linear-gradient(180deg, #1890ff 0%, #096dd9 100%) !important;
+}
+
+.admin-header {
+  background: white;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.admin-content {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 64px);
+}
+
+/* 页面标题卡片 */
+.page-header {
+  margin-bottom: 24px;
+  background: white;
+  padding: 20px 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #1890ff;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* 统计卡片 */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(24, 144, 255, 0.15);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-right: 20px;
+  background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+  color: white;
+}
+
+.stat-content h3 {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0;
+  color: #333;
+}
+
+.stat-content p {
+  margin: 4px 0 0;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 图表区域 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.chart-card h3 {
+  margin: 0 0 20px;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 筛选栏 */
+.filter-bar {
+  background: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 表格卡片 */
+.table-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* 物品图片 */
+.item-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.empty-image {
+  width: 60px;
+  height: 60px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+}
+
+/* 状态标签 - 微信小程序风格 */
+.tag-pending {
+  background: #e6f7ff;
+  color: #1890ff;
+  border-color: #91d5ff;
+  border-radius: 4px;
+}
+
+.tag-approved {
+  background: #f6ffed;
+  color: #52c41a;
+  border-color: #b7eb8f;
+  border-radius: 4px;
+}
+
+.tag-rejected {
+  background: #fff1f0;
+  color: #ff4d4f;
+  border-color: #ffa39e;
+  border-radius: 4px;
+}
+
+.tag-lost {
+  background: #e6f7ff;
+  color: #1890ff;
+  border-color: #91d5ff;
+  border-radius: 4px;
+}
+
+.tag-found {
+  background: #fff0f6;
+  color: #eb2f96;
+  border-color: #ffadd2;
+  border-radius: 4px;
+}
+
+.tag-unclaimed {
+  background: #f0f5ff;
+  color: #2f54eb;
+  border-color: #adc6ff;
+  border-radius: 4px;
+}
+
+.tag-claimed {
+  background: #e6fffb;
+  color: #13c2c2;
+  border-color: #87e8de;
+  border-radius: 4px;
+}
+
+/* 按钮统一样式 - 圆角风格 */
+button, .ant-btn {
+  border-radius: 8px !important;
+}
+
+/* 输入框统一样式 - 圆角风格 */
+input, textarea, .ant-input, .ant-select-selector {
+  border-radius: 8px !important;
+}
+
+/* Ant Design 主题覆盖 - 蓝色系 */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%) !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3) !important;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%) !important;
+}
+
+.ant-menu-dark {
+  background: transparent !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px;
+}
+
+.ant-menu-dark .ant-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px;
+}
+
+.ant-table-thead > tr > th {
+  background: #f5f7fa !important;
+  color: #333 !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid #1890ff !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #e6f7ff !important;
+}
+
+.ant-card {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.ant-tag {
+  border-radius: 4px !important;
+}
+
+.ant-pagination-item-active {
+  border-color: #1890ff !important;
+}
+
+.ant-pagination-item-active a {
+  color: #1890ff !important;
+}

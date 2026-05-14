@@ -1,0 +1,50 @@
+{
+  "description": "校园失物招领 微信小程序",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.15.2",
+  "projectname": "campus-lost-found",
+  "condition": {},
+  "setting": {
+    "coverView": true,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "enhance": true,
+    "showShadowRootInWxmlPanel": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": false,
+    "uglifyFileName": false,
+    "ignoreUploadUnusedFiles": true,
+    "autoAudits": false,
+    "newFeature": false,
+    "checkInvalidKey": true,
+    "showES6CompileOption": false,
+    "useCompilerPlugins": false,
+    "disableUseStrict": false,
+    "compileWorklet": false,
+    "uploadWithSourceMap": true,
+    "localPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "appid": "wx7af1da8b41536ea7",
+  "isGameTourist": false,
+  "miniprogramRoot": "miniprogram/",
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  },
+  "simulatorPluginLibVersion": {}
+}
