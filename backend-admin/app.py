@@ -63,10 +63,22 @@ MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 app = Flask(__name__)
 CORS(app)
 
-# 使用用户端的数据库
-_lost_found_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 回到失物招领小组项目根目录
-_lost_found_backend = os.path.join(_lost_found_dir, "lost_found-main", "校园失物招领小程序", "campus-lost-found", "backend")
-_db_file = os.path.join(_lost_found_backend, "campus_lost_found.db")
+# 使用用户端的数据库：兼容整理前/整理后的项目结构
+_lost_found_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+_db_candidates = [
+    os.path.join(_lost_found_dir, "校园失物招领小程序", "campus-lost-found", "backend", "campus_lost_found.db"),
+    os.path.join(_lost_found_dir, "lost_found-main", "校园失物招领小程序", "campus-lost-found", "backend", "campus_lost_found.db"),
+]
+
+_db_file = next((p for p in _db_candidates if os.path.exists(p)), _db_candidates[0])
+
+print("数据库路径：", _db_file)
+print("数据库是否存在：", os.path.exists(_db_file))
+
+if not os.path.exists(_db_file):
+    raise FileNotFoundError(f"数据库文件不存在：{_db_file}")
+
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + _db_file.replace("\\", "/")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
