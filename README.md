@@ -1,4 +1,5 @@
 # 后台管理系统
+以下点击操作在文件夹进行
 
 ## admin-web\start.bat
 
@@ -26,7 +27,7 @@
 2. **导入项目**（或「打开目录」），**项目目录** 选到本仓库下的 **`mainwechatapp`** 文件夹（与 `mainwechatapp\project.config.json` 同级），例如：
    - `...\lost-and-found\mainwechatapp`
 3. **不要**选仓库根目录 `lost-and-found`，**不要**单独选 `mainwechatapp\campus-lost-found\miniprogram`。根目录配置里已通过 `miniprogramRoot` 指向 `campus-lost-found/miniprogram/`，工具会自动加载其中的 `app.json`。
-4. 填写或确认 **AppID**（测试可选用工具提供的测试号；上传体验版需使用公众平台注册的小程序 AppID）。
+4. 填写或确认 **AppID**（测试可选用工具提供的测试号；上传体验版需使用公众平台注册的小程序 AppID）。统一使用appID：wx7af1da8b41536ea7
 
 ## 本地接口调试
 
