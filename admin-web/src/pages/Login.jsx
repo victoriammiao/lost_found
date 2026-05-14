@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Form, Input, Button, Card } from 'antd'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { adminLogin } from '../utils/api'
 import { setAdminToken, setAdminUser } from '../utils/auth'
 import { useNavigate } from 'react-router-dom'
@@ -30,7 +30,11 @@ function Login() {
   return (
     <div className="login-container">
       <Card className="login-card" bordered={false}>
-        <h1>管理员登录</h1>
+        <div style={{ textAlign: 'center', marginBottom: 8 }}>
+          <SafetyCertificateOutlined style={{ fontSize: 44, color: '#1890ff' }} />
+        </div>
+        <h1>失物招领管理后台</h1>
+        <p className="login-subtitle">Lost & Found Admin System</p>
         <Form
           name="login"
           onFinish={onFinish}
@@ -42,7 +46,7 @@ function Login() {
             rules={[{ required: true, message: '请输入管理员账号' }]}
           >
             <Input
-              prefix={<UserOutlined />}
+              prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
               placeholder="管理员账号"
             />
           </Form.Item>
@@ -52,7 +56,7 @@ function Login() {
             rules={[{ required: true, message: '请输入密码' }]}
           >
             <Input.Password
-              prefix={<LockOutlined />}
+              prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
               placeholder="密码"
             />
           </Form.Item>
@@ -63,13 +67,22 @@ function Login() {
               htmlType="submit"
               loading={loading}
               block
+              style={{ height: 42, fontSize: 15, fontWeight: 500 }}
             >
-              登录
+              登 录
             </Button>
           </Form.Item>
         </Form>
-        <div style={{ marginTop: 16, textAlign: 'center', color: '#999', fontSize: 12 }}>
-          默认管理员账号: 000 | 密码: 0000
+        <div style={{
+          marginTop: 20,
+          textAlign: 'center',
+          color: '#bfbfbf',
+          fontSize: 12,
+          paddingTop: 16,
+          borderTop: '1px solid #f0f0f0',
+        }}>
+          默认管理员账号: <strong style={{ color: '#8c8c8c' }}>000</strong> &nbsp;|&nbsp;
+          密码: <strong style={{ color: '#8c8c8c' }}>0000</strong>
         </div>
       </Card>
     </div>

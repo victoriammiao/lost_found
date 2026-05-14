@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Table, Card, Tag, Button, Space, Input, Select, DatePicker,
-  Modal, Form, message, Popconfirm, Drawer, Image
+  Table, Tag, Button, Space, Input, Select, DatePicker,
+  Form, message, Popconfirm, Drawer, Image, Empty, Descriptions, Divider, Tooltip
 } from 'antd'
 import {
   SearchOutlined, ReloadOutlined, EyeOutlined,
   EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined,
-  CheckCircleOutlined, StopOutlined
+  CheckCircleOutlined, StopOutlined, AppstoreOutlined, FilterOutlined
 } from '@ant-design/icons'
 import { getItems, updateItem, reviewItem, batchReviewItems, batchDeleteItems } from '../utils/api'
-import dayjs from 'dayjs'
 
 const { RangePicker } = DatePicker
 
@@ -18,6 +17,7 @@ function ItemList() {
   const [data, setData] = useState([])
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
   const [filters, setFilters] = useState({})
+  const [keywordInput, setKeywordInput] = useState('')
   const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const [editVisible, setEditVisible] = useState(false)
   const [detailVisible, setDetailVisible] = useState(false)
@@ -26,7 +26,8 @@ function ItemList() {
 
   useEffect(() => {
     fetchData()
-  }, [pagination.current, filters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.current, pagination.pageSize, filters])
 
   const fetchData = async () => {
     setLoading(true)
@@ -36,25 +37,43 @@ function ItemList() {
         pageSize: pagination.pageSize,
         ...filters,
       }
-      if (filters.startDate) params.startDate = filters.startDate
-      if (filters.endDate) params.endDate = filters.endDate
-
       const res = await getItems(params)
-      setData(res.data.list)
-      setPagination((prev) => ({ ...prev, total: res.data.total }))
+      const payload = res?.data || {}
+      setData(Array.isArray(payload.list) ? payload.list : [])
+      setPagination((prev) => ({
+        ...prev,
+        total: typeof payload.total === 'number' ? payload.total : 0,
+      }))
+      setSelectedRowKeys([])
     } catch (e) {
       console.error('Failed to fetch items:', e)
+      setData([])
+      setPagination((prev) => ({ ...prev, total: 0 }))
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSearch = (values) => {
-    setFilters(values)
+  const applyFilter = (patch) => {
+    setFilters((prev) => {
+      const next = { ...prev, ...patch }
+      // 移除空值
+      Object.keys(next).forEach((k) => {
+        if (next[k] === undefined || next[k] === null || next[k] === '') {
+          delete next[k]
+        }
+      })
+      return next
+    })
     setPagination((prev) => ({ ...prev, current: 1 }))
   }
 
+  const handleSearch = () => {
+    applyFilter({ keyword: keywordInput.trim() })
+  }
+
   const handleReset = () => {
+    setKeywordInput('')
     setFilters({})
     setPagination((prev) => ({ ...prev, current: 1 }))
   }
@@ -116,14 +135,15 @@ function ItemList() {
     }
   }
 
-  const handleBatchDelete = async () => {
-    if (selectedRowKeys.length === 0) {
+  const handleBatchDelete = async (idsOverride) => {
+    const ids = Array.isArray(idsOverride) ? idsOverride : selectedRowKeys
+    if (ids.length === 0) {
       message.warning('请选择要删除的物品')
       return
     }
     try {
-      await batchDeleteItems(selectedRowKeys)
-      message.success(`已删除 ${selectedRowKeys.length} 条记录`)
+      await batchDeleteItems(ids)
+      message.success(`已删除 ${ids.length} 条记录`)
       setSelectedRowKeys([])
       fetchData()
     } catch (e) {
@@ -131,39 +151,33 @@ function ItemList() {
     }
   }
 
+  // ===== 标签渲染 =====
   const getReviewTag = (status) => {
     const map = {
-      pending: { color: 'orange', text: '待审核', className: 'tag-pending' },
-      approved: { color: 'green', text: '已通过', className: 'tag-approved' },
-      rejected: { color: 'red', text: '已拒绝', className: 'tag-rejected' },
+      pending: { className: 'tag-pending', text: '待审核' },
+      approved: { className: 'tag-approved', text: '已通过' },
+      rejected: { className: 'tag-rejected', text: '已拒绝' },
     }
     const tag = map[status] || map.pending
     return <Tag className={tag.className}>{tag.text}</Tag>
   }
 
   const getTypeTag = (type) => {
-    const map = {
-      '寻物': { color: 'blue', text: '寻物', className: 'tag-lost' },
-      '招领': { color: 'pink', text: '招领', className: 'tag-found' },
-    }
-    const tag = map[type] || map['招领']
-    return <Tag className={tag.className}>{tag.text}</Tag>
+    if (type === '寻物') return <Tag className="tag-lost">寻物</Tag>
+    if (type === '招领') return <Tag className="tag-found">招领</Tag>
+    return <Tag>{type || '-'}</Tag>
   }
 
   const getStatusTag = (status) => {
-    const map = {
-      '未认领': { color: 'blue', text: '未认领', className: 'tag-unclaimed' },
-      '已认领': { color: 'green', text: '已认领', className: 'tag-claimed' },
-    }
-    const tag = map[status] || map['未认领']
-    return <Tag className={tag.className}>{tag.text}</Tag>
+    if (status === '已认领') return <Tag className="tag-claimed">已认领</Tag>
+    return <Tag className="tag-unclaimed">未认领</Tag>
   }
 
   const columns = [
     {
       title: 'ID',
       dataIndex: 'id',
-      width: 60,
+      width: 70,
     },
     {
       title: '图片',
@@ -171,17 +185,26 @@ function ItemList() {
       width: 80,
       render: (url) =>
         url ? (
-          <Image src={url} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 4 }} />
+          <Image
+            src={url}
+            width={56}
+            height={56}
+            style={{ objectFit: 'cover', borderRadius: 6 }}
+            preview={{ mask: <EyeOutlined /> }}
+          />
         ) : (
-          <div className="empty-image">
-            <span>无图</span>
-          </div>
+          <div className="empty-image">无图</div>
         ),
     },
     {
       title: '标题',
       dataIndex: 'title',
       ellipsis: true,
+      render: (text) => (
+        <Tooltip title={text}>
+          <span style={{ fontWeight: 500 }}>{text}</span>
+        </Tooltip>
+      ),
     },
     {
       title: '类型',
@@ -192,19 +215,19 @@ function ItemList() {
     {
       title: '状态',
       dataIndex: 'status',
-      width: 80,
+      width: 90,
       render: (status) => getStatusTag(status),
     },
     {
       title: '审核',
       dataIndex: 'reviewStatus',
-      width: 80,
+      width: 90,
       render: (status) => getReviewTag(status),
     },
     {
       title: '发布者',
       dataIndex: 'publisher',
-      width: 100,
+      width: 110,
     },
     {
       title: '发布时间',
@@ -213,21 +236,35 @@ function ItemList() {
     },
     {
       title: '操作',
-      width: 200,
+      width: 240,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size={4} wrap>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>
             查看
           </Button>
           {record.reviewStatus === 'pending' && (
             <>
-              <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleReview(record, 'approve')}>
-                通过
-              </Button>
-              <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleReview(record, 'reject')}>
-                拒绝
-              </Button>
+              <Popconfirm
+                title="确定通过审核？"
+                onConfirm={() => handleReview(record, 'approve')}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="link" size="small" icon={<CheckOutlined />} style={{ color: '#52c41a' }}>
+                  通过
+                </Button>
+              </Popconfirm>
+              <Popconfirm
+                title="确定拒绝审核？"
+                onConfirm={() => handleReview(record, 'reject')}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="link" size="small" danger icon={<CloseOutlined />}>
+                  拒绝
+                </Button>
+              </Popconfirm>
             </>
           )}
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
@@ -235,6 +272,7 @@ function ItemList() {
           </Button>
           <Popconfirm
             title="确定删除此物品？"
+            description="此操作不可恢复"
             onConfirm={() => handleBatchDelete([record.id])}
             okText="确定"
             cancelText="取消"
@@ -253,87 +291,116 @@ function ItemList() {
     onChange: setSelectedRowKeys,
   }
 
+  // 兼容后端字段 claimr / claimer 笔误
+  const getClaimer = (item) => item?.claimer || item?.claimr || ''
+
   return (
     <div>
       <div className="page-header">
-        <h2>信息管理</h2>
+        <Space align="center">
+          <AppstoreOutlined style={{ fontSize: 20, color: '#1890ff' }} />
+          <h2 style={{ margin: 0 }}>信息管理</h2>
+          <span style={{ color: '#999', fontSize: 13, marginLeft: 8 }}>
+            共 {pagination.total} 条
+          </span>
+        </Space>
       </div>
 
       <div className="filter-bar">
-        <Input
-          placeholder="搜索标题/描述"
-          style={{ width: 200 }}
-          allowClear
-          onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
-          suffix={<SearchOutlined />}
-        />
-        <Select
-          placeholder="物品类型"
-          style={{ width: 120 }}
-          allowClear
-          onChange={(value) => setFilters({ ...filters, postType: value })}
-          options={[
-            { label: '寻物', value: '寻物' },
-            { label: '招领', value: '招领' },
-          ]}
-        />
-        <Select
-          placeholder="物品状态"
-          style={{ width: 120 }}
-          allowClear
-          onChange={(value) => setFilters({ ...filters, status: value })}
-          options={[
-            { label: '未认领', value: '未认领' },
-            { label: '已认领', value: '已认领' },
-          ]}
-        />
-        <Select
-          placeholder="审核状态"
-          style={{ width: 120 }}
-          allowClear
-          onChange={(value) => setFilters({ ...filters, reviewStatus: value })}
-          options={[
-            { label: '待审核', value: 'pending' },
-            { label: '已通过', value: 'approved' },
-            { label: '已拒绝', value: 'rejected' },
-          ]}
-        />
-        <RangePicker
-          onChange={(dates) => {
-            setFilters({
-              ...filters,
-              startDate: dates?.[0]?.format('YYYY-MM-DD') || '',
-              endDate: dates?.[1]?.format('YYYY-MM-DD') || '',
-            })
-          }}
-        />
-        <Button icon={<ReloadOutlined />} onClick={handleReset}>
-          重置
-        </Button>
+        <Space wrap size={[12, 12]}>
+          <span className="filter-label">
+            <FilterOutlined /> 筛选：
+          </span>
+          <Input
+            placeholder="搜索标题/描述"
+            style={{ width: 220 }}
+            allowClear
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onPressEnter={handleSearch}
+            prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+          />
+          <Select
+            placeholder="物品类型"
+            style={{ width: 130 }}
+            allowClear
+            value={filters.postType}
+            onChange={(value) => applyFilter({ postType: value })}
+            options={[
+              { label: '寻物', value: '寻物' },
+              { label: '招领', value: '招领' },
+            ]}
+          />
+          <Select
+            placeholder="物品状态"
+            style={{ width: 130 }}
+            allowClear
+            value={filters.status}
+            onChange={(value) => applyFilter({ status: value })}
+            options={[
+              { label: '未认领', value: '未认领' },
+              { label: '已认领', value: '已认领' },
+            ]}
+          />
+          <Select
+            placeholder="审核状态"
+            style={{ width: 130 }}
+            allowClear
+            value={filters.reviewStatus}
+            onChange={(value) => applyFilter({ reviewStatus: value })}
+            options={[
+              { label: '待审核', value: 'pending' },
+              { label: '已通过', value: 'approved' },
+              { label: '已拒绝', value: 'rejected' },
+            ]}
+          />
+          <RangePicker
+            onChange={(dates) => {
+              applyFilter({
+                startDate: dates?.[0]?.format('YYYY-MM-DD') || '',
+                endDate: dates?.[1]?.format('YYYY-MM-DD') || '',
+              })
+            }}
+          />
+          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+            搜索
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={handleReset}>
+            重置
+          </Button>
+        </Space>
       </div>
 
       <div className="table-card">
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
+        <div className="table-toolbar">
           <Space>
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={() => handleBatchReview('approve')}
+            <Popconfirm
+              title={`确定批量通过选中的 ${selectedRowKeys.length} 条物品？`}
+              onConfirm={() => handleBatchReview('approve')}
               disabled={selectedRowKeys.length === 0}
+              okText="确定"
+              cancelText="取消"
             >
-              批量通过
-            </Button>
-            <Button
-              danger
-              icon={<StopOutlined />}
-              onClick={() => handleBatchReview('reject')}
+              <Button type="primary" icon={<CheckCircleOutlined />} disabled={selectedRowKeys.length === 0}>
+                批量通过
+              </Button>
+            </Popconfirm>
+            <Popconfirm
+              title={`确定批量拒绝选中的 ${selectedRowKeys.length} 条物品？`}
+              onConfirm={() => handleBatchReview('reject')}
               disabled={selectedRowKeys.length === 0}
+              okText="确定"
+              cancelText="取消"
             >
-              批量拒绝
-            </Button>
+              <Button danger icon={<StopOutlined />} disabled={selectedRowKeys.length === 0}>
+                批量拒绝
+              </Button>
+            </Popconfirm>
             <Popconfirm
               title={`确定删除选中的 ${selectedRowKeys.length} 条物品？`}
-              onConfirm={handleBatchDelete}
+              description="此操作不可恢复"
+              onConfirm={() => handleBatchDelete()}
+              disabled={selectedRowKeys.length === 0}
               okText="确定"
               cancelText="取消"
             >
@@ -341,7 +408,13 @@ function ItemList() {
                 批量删除
               </Button>
             </Popconfirm>
+            <span style={{ color: '#999', marginLeft: 8 }}>
+              已选择 {selectedRowKeys.length} 项
+            </span>
           </Space>
+          <Tooltip title="刷新">
+            <Button icon={<ReloadOutlined />} onClick={fetchData} />
+          </Tooltip>
         </div>
 
         <Table
@@ -349,62 +422,101 @@ function ItemList() {
           dataSource={data}
           rowKey="id"
           loading={loading}
-          pagination={pagination}
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+            pageSizeOptions: ['10', '20', '50'],
+          }}
           onChange={handleTableChange}
           rowSelection={rowSelection}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1300 }}
+          locale={{
+            emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无物品数据" />,
+          }}
         />
       </div>
 
       {/* 详情抽屉 */}
       <Drawer
-        title="物品详情"
+        title={<><EyeOutlined /> 物品详情</>}
         placement="right"
-        width={500}
+        width={560}
         onClose={() => setDetailVisible(false)}
         open={detailVisible}
       >
         {currentItem && (
           <div>
-            {currentItem.imageUrl && (
-              <Image src={currentItem.imageUrl} style={{ width: '100%', marginBottom: 16 }} />
+            {currentItem.imageUrl ? (
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <Image
+                  src={currentItem.imageUrl}
+                  style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8 }}
+                />
+              </div>
+            ) : (
+              <div className="empty-image" style={{
+                width: '100%', height: 160, marginBottom: 16,
+              }}>
+                暂无图片
+              </div>
             )}
-            <p><strong>标题：</strong>{currentItem.title}</p>
-            <p><strong>描述：</strong>{currentItem.description}</p>
-            <p><strong>类型：</strong>{getTypeTag(currentItem.postType)}</p>
-            <p><strong>状态：</strong>{getStatusTag(currentItem.status)}</p>
-            <p><strong>审核：</strong>{getReviewTag(currentItem.reviewStatus)}</p>
-            <p><strong>地点：</strong>{currentItem.locationLabel || '未指定'}</p>
-            <p><strong>发布者：</strong>{currentItem.publisher}</p>
-            <p><strong>发布时间：</strong>{currentItem.createTime}</p>
-            <p><strong>认领者：</strong>{currentItem.claimer || '无'}</p>
-            <p><strong>发布者联系方式：</strong>{currentItem.contact || '无'}</p>
-            <p><strong>线索数：</strong>{currentItem.clueCount || 0}</p>
+
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item label="物品ID">{currentItem.id}</Descriptions.Item>
+              <Descriptions.Item label="标题">{currentItem.title}</Descriptions.Item>
+              <Descriptions.Item label="类型">{getTypeTag(currentItem.postType)}</Descriptions.Item>
+              <Descriptions.Item label="物品状态">{getStatusTag(currentItem.status)}</Descriptions.Item>
+              <Descriptions.Item label="审核状态">{getReviewTag(currentItem.reviewStatus)}</Descriptions.Item>
+              <Descriptions.Item label="所在地点">
+                {currentItem.locationLabel || <span style={{ color: '#bbb' }}>未指定</span>}
+              </Descriptions.Item>
+              <Descriptions.Item label="发布者">{currentItem.publisher}</Descriptions.Item>
+              <Descriptions.Item label="发布时间">{currentItem.createTime}</Descriptions.Item>
+              <Descriptions.Item label="认领者">
+                {getClaimer(currentItem) || <span style={{ color: '#bbb' }}>无</span>}
+              </Descriptions.Item>
+              <Descriptions.Item label="联系方式">
+                {currentItem.contact || <span style={{ color: '#bbb' }}>无</span>}
+              </Descriptions.Item>
+              <Descriptions.Item label="线索数">
+                <Tag color="blue">{currentItem.clueCount || 0}</Tag>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <div className="detail-section-title">物品描述</div>
+            <div className="detail-text">
+              {currentItem.description || '（无描述）'}
+            </div>
           </div>
         )}
       </Drawer>
 
       {/* 编辑抽屉 */}
       <Drawer
-        title="编辑物品"
+        title={<><EditOutlined /> 编辑物品</>}
         placement="right"
-        width={500}
+        width={520}
         onClose={() => setEditVisible(false)}
         open={editVisible}
         extra={
-          <Button type="primary" onClick={handleEditSubmit}>
-            保存
-          </Button>
+          <Space>
+            <Button onClick={() => setEditVisible(false)}>取消</Button>
+            <Button type="primary" onClick={handleEditSubmit}>
+              保存
+            </Button>
+          </Space>
         }
       >
         <Form form={form} layout="vertical">
           <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}>
-            <Input />
+            <Input placeholder="请输入物品标题" />
           </Form.Item>
           <Form.Item name="description" label="描述">
-            <Input.TextArea rows={4} />
+            <Input.TextArea rows={4} placeholder="物品描述" />
           </Form.Item>
-          <Form.Item name="status" label="状态">
+          <Form.Item name="status" label="物品状态">
             <Select
               options={[
                 { label: '未认领', value: '未认领' },
@@ -413,7 +525,7 @@ function ItemList() {
             />
           </Form.Item>
           <Form.Item name="contact" label="联系方式">
-            <Input />
+            <Input placeholder="联系方式" />
           </Form.Item>
         </Form>
       </Drawer>
