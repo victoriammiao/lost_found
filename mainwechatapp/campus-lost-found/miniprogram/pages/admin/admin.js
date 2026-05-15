@@ -90,9 +90,10 @@ Page({
       const res = await request({
         url: "/admin/student-verifications",
         method: "GET",
+        data: { status: "" }
       });
       if (Number(res.code) === 0) {
-        this.setData({ verifyList: res.data || [] });
+        this.setData({ verifyList: (res.data && res.data.list) || [] });
       } else {
         if (res.code === 403) wx.showToast({ title: "无管理员权限", icon: "none" });
         else wx.showToast({ title: res.message || "加载失败", icon: "none" });
@@ -153,11 +154,14 @@ Page({
       });
       if (Number(res.code) === 0) {
         wx.showToast({ title: "已通过", icon: "success" });
-        this.loadVerify();
+        const list = this.data.verifyList.filter(item => item.username !== u);
+        this.setData({ verifyList: list });
       } else {
         wx.showToast({ title: res.message || "操作失败", icon: "none" });
       }
-    } catch (e) {}
+    } catch (e) {
+      wx.showToast({ title: "请求失败", icon: "none" });
+    }
   },
 
   async onRejectVerify(e) {
@@ -176,11 +180,14 @@ Page({
           });
           if (Number(res.code) === 0) {
             wx.showToast({ title: "已驳回", icon: "success" });
-            this.loadVerify();
+            const list = this.data.verifyList.filter(item => item.username !== u);
+            this.setData({ verifyList: list });
           } else {
             wx.showToast({ title: res.message || "操作失败", icon: "none" });
           }
-        } catch (e) {}
+        } catch (e) {
+          wx.showToast({ title: "请求失败", icon: "none" });
+        }
       },
     });
   },

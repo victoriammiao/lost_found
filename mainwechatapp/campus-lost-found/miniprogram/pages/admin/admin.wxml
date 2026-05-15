@@ -18,9 +18,9 @@
   </view>
 
   <block wx:if="{{adminTab === 'verify'}}">
-    <view class="tip">以下为待审核的学生认证申请
+    <view class="tip">学生认证管理
     （管理员账号：000）</view>
-    <view wx:if="{{verifyList.length === 0 && !loading}}" class="empty">暂无待审核申请</view>
+    <view wx:if="{{verifyList.length === 0 && !loading}}" class="empty">暂无用户认证信息</view>
     <view wx:for="{{verifyList}}" wx:key="username" class="card">
       <view class="row">
         <text class="label">账号</text>
@@ -28,13 +28,20 @@
       </view>
       <view class="row">
         <text class="label">姓名</text>
-        <text class="val">{{item.realName}}</text>
+        <text class="val">{{item.realName || '未填写'}}</text>
       </view>
       <view class="row">
         <text class="label">学号</text>
-        <text class="val mono">{{item.studentNo}}</text>
+        <text class="val mono">{{item.studentNo || '未填写'}}</text>
       </view>
-      <view class="actions">
+      <view class="row">
+        <text class="label">认证状态</text>
+        <text class="val" wx:if="{{item.studentVerifyStatus === 'pending'}}">待审核</text>
+        <text class="val" style="color:green" wx:elif="{{item.studentVerifyStatus === 'approved'}}">已通过</text>
+        <text class="val" style="color:red" wx:elif="{{item.studentVerifyStatus === 'rejected'}}">已驳回</text>
+        <text class="val" style="color:gray" wx:else>未认证</text>
+      </view>
+      <view class="actions" wx:if="{{item.studentVerifyStatus === 'pending'}}">
         <button class="btn-reject" size="mini" data-u="{{item.username}}" bindtap="onRejectVerify">驳回</button>
         <button class="btn-ok" size="mini" data-u="{{item.username}}" bindtap="onApproveVerify">通过</button>
       </view>

@@ -416,20 +416,38 @@ def verify_student():
 @app.route("/admin/student-verifications", methods=["GET"])
 @admin_required
 def admin_list_pending_verifications():
-    rows = (
-        User.query.filter_by(student_verify_status="pending")
-        .order_by(User.id.asc())
-        .all()
-    )
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("pageSize", 10, type=int)
+    status = request.args.get("status", "").strip()
+    
+    query = User.query.filter(User.username != ADMIN_USERNAME)
+    
+    if status:
+        query = query.filter(User.student_verify_status == status)
+    
+    total = query.count()
+    offset = (page - 1) * page_size
+    rows = query.order_by(User.id.desc()).offset(offset).limit(page_size).all()
+    
     data = [
         {
             "username": u.username,
             "realName": u.real_name or "",
             "studentNo": u.student_no or "",
+            "studentVerifyStatus": u.student_verify_status or "",
         }
         for u in rows
     ]
-    return jsonify({"code": 0, "message": "ok", "data": data})
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "list": data,
+            "total": total,
+            "page": page,
+            "pageSize": page_size
+        }
+    })
 
 
 @app.route("/admin/student-verifications/approve", methods=["POST"])
@@ -1131,6 +1149,652 @@ def _ensure_item_resolved_clue_column():
     if "resolved_clue_id" not in names:
         db.session.execute(text("ALTER TABLE items ADD COLUMN resolved_clue_id INTEGER"))
         db.session.commit()
+
+
+# ========== 管理员后台扩展路由 ==========
+from datetime import datetime, timedelta
+
+
+@app.route("/admin/login", methods=["POST"])
+def admin_login():
+    """管理员登录"""
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    password = (data.get("password") or "").strip()
+
+    if not username or not password:
+        return jsonify({"code": 1, "message": "账号和密码不能为空"})
+
+    # 验证管理员账号
+    if username != ADMIN_USERNAME:
+        return jsonify({"code": 1, "message": "账号或密码错误"})
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"code": 1, "message": "账号或密码错误"})
+
+    # 验证密码
+    if not check_password_hash(user.password_hash, password):
+        return jsonify({"code": 1, "message": "账号或密码错误"})
+
+    token = "admin-" + uuid.uuid4().hex
+    tokens[token] = username
+    return jsonify({
+        "code": 0,
+        "message": "登录成功",
+        "token": token,
+        "username": username,
+    })
+
+
+@app.route("/admin/logout", methods=["POST"])
+@admin_required
+def admin_logout():
+    """管理员登出"""
+    token = request.headers.get("Authorization", "").strip()
+    if token in tokens:
+        del tokens[token]
+    return jsonify({"code": 0, "message": "已退出登录"})
+
+
+@app.route("/admin/check", methods=["GET"])
+def admin_check():
+    """验证管理员登录状态"""
+    token = request.headers.get("Authorization", "").strip()
+    if token and token in tokens:
+        username = tokens[token]
+        if username == ADMIN_USERNAME:
+            return jsonify({
+                "code": 0,
+                "message": "ok",
+                "data": {
+                    "username": username,
+                    "isAdmin": True
+                }
+            })
+    return jsonify({"code": 401, "message": "未登录"})
+
+
+@app.route("/admin/users", methods=["GET"])
+@admin_required
+def admin_list_users():
+    """获取用户列表（分页+筛选）"""
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("pageSize", 10, type=int)
+    keyword = request.args.get("keyword", "").strip()
+    verify_status = request.args.get("verifyStatus", "").strip()
+
+    query = User.query
+
+    # 关键词筛选（用户名）
+    if keyword:
+        query = query.filter(User.username.like(f"%{keyword}%"))
+
+    # 学生认证状态筛选
+    if verify_status:
+        query = query.filter(User.student_verify_status == verify_status)
+
+    # 排除管理员账号
+    query = query.filter(User.username != ADMIN_USERNAME)
+
+    # 统计总数
+    total = query.count()
+
+    # 分页
+    offset = (page - 1) * page_size
+    users = query.order_by(User.id.desc()).offset(offset).limit(page_size).all()
+
+    data = []
+    for u in users:
+        # 统计用户发布的物品数
+        item_count = Item.query.filter_by(publisher=u.username).count()
+        # 统计待审核物品数
+        pending_count = Item.query.filter_by(
+            publisher=u.username,
+            review_status="pending"
+        ).count()
+
+        data.append({
+            "id": u.id,
+            "username": u.username,
+            "studentVerified": u.student_verified,
+            "studentVerifyStatus": u.student_verify_status or "none",
+            "realName": u.real_name or "",
+            "studentNoMasked": mask_student_no(u.student_no or ""),
+            "studentNo": u.student_no or "",
+            "itemCount": item_count,
+            "pendingCount": pending_count,
+        })
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "list": data,
+            "total": total,
+            "page": page,
+            "pageSize": page_size
+        }
+    })
+
+
+@app.route("/admin/users/<username>/items", methods=["GET"])
+@admin_required
+def admin_list_user_items(username):
+    """获取用户发布的物品列表"""
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("pageSize", 10, type=int)
+
+    query = Item.query.filter_by(publisher=username)
+    total = query.count()
+
+    offset = (page - 1) * page_size
+    items = query.order_by(Item.id.desc()).offset(offset).limit(page_size).all()
+
+    data = []
+    for it in items:
+        data.append({
+            "id": it.id,
+            "title": it.title,
+            "description": it.description,
+            "imageUrl": it.image_url or "",
+            "status": it.status,
+            "createTime": it.create_time,
+            "postType": it.post_type,
+            "locationLabel": it.location_label or "",
+            "reviewStatus": _item_review_status(it),
+            "contact": it.contact or "",
+        })
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "list": data,
+            "total": total,
+            "page": page,
+            "pageSize": page_size
+        }
+    })
+
+
+@app.route("/admin/users/<username>/ban", methods=["POST"])
+@admin_required
+def admin_ban_user(username):
+    """封禁用户"""
+    if username == ADMIN_USERNAME:
+        return jsonify({"code": 1, "message": "不能封禁管理员账号"})
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"code": 1, "message": "用户不存在"})
+
+    return jsonify({"code": 0, "message": "用户已记录（此版本暂不支持封禁功能）"})
+
+
+@app.route("/admin/users/<username>/unban", methods=["POST"])
+@admin_required
+def admin_unban_user(username):
+    """解封用户"""
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"code": 1, "message": "用户不存在"})
+
+    return jsonify({"code": 0, "message": "用户已记录"})
+
+
+@app.route("/admin/items", methods=["GET"])
+@admin_required
+def admin_list_all_items():
+    """获取所有物品列表（含筛选）"""
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("pageSize", 10, type=int)
+    post_type = request.args.get("postType", "").strip()
+    status = request.args.get("status", "").strip()
+    review_status = request.args.get("reviewStatus", "").strip()
+    keyword = request.args.get("keyword", "").strip()
+    start_date = request.args.get("startDate", "").strip()
+    end_date = request.args.get("endDate", "").strip()
+
+    query = Item.query
+
+    # 筛选条件
+    if post_type:
+        query = query.filter(Item.post_type == post_type)
+    if status:
+        query = query.filter(Item.status == status)
+    if review_status:
+        query = query.filter(Item.review_status == review_status)
+    if keyword:
+        query = query.filter(
+            db.or_(
+                Item.title.like(f"%{keyword}%"),
+                Item.description.like(f"%{keyword}%")
+            )
+        )
+    if start_date:
+        query = query.filter(Item.create_time >= start_date)
+    if end_date:
+        query = query.filter(Item.create_time <= end_date)
+
+    total = query.count()
+
+    offset = (page - 1) * page_size
+    items = query.order_by(Item.id.desc()).offset(offset).limit(page_size).all()
+
+    data = []
+    for it in items:
+        # 获取该物品的线索数
+        clue_count = ItemClue.query.filter_by(item_id=it.id).count()
+
+        data.append({
+            "id": it.id,
+            "title": it.title,
+            "description": it.description,
+            "imageUrl": it.image_url or "",
+            "status": it.status,
+            "createTime": it.create_time,
+            "postType": it.post_type,
+            "locationId": it.location_id or "",
+            "locationLabel": it.location_label or "",
+            "reviewStatus": _item_review_status(it),
+            "contact": it.contact or "",
+            "publisher": it.publisher,
+            "claimer": it.claimer or "",
+            "clueCount": clue_count,
+            "isDraft": getattr(it, 'is_draft', False),
+        })
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "list": data,
+            "total": total,
+            "page": page,
+            "pageSize": page_size
+        }
+    })
+
+
+@app.route("/admin/items/<int:item_id>", methods=["PUT"])
+@admin_required
+def admin_update_item(item_id):
+    """管理员编辑物品"""
+    item = Item.query.get(item_id)
+    if not item:
+        return jsonify({"code": 1, "message": "物品不存在"})
+
+    data = request.get_json(silent=True) or {}
+
+    if "title" in data:
+        item.title = data.get("title", "").strip()
+    if "description" in data:
+        item.description = data.get("description", "").strip()
+    if "status" in data:
+        item.status = data.get("status", "")
+    if "contact" in data:
+        item.contact = data.get("contact", "").strip()[:80]
+    if "locationLabel" in data:
+        item.location_label = data.get("locationLabel", "")
+
+    db.session.commit()
+    return jsonify({
+        "code": 0,
+        "message": "更新成功",
+        "data": {
+            "id": item.id,
+            "title": item.title,
+            "description": item.description,
+            "status": item.status,
+            "contact": item.contact or "",
+        }
+    })
+
+
+@app.route("/admin/items/<int:item_id>/review", methods=["PUT"])
+@admin_required
+def admin_review_item(item_id):
+    """审核物品（通过/拒绝）"""
+    item = Item.query.get(item_id)
+    if not item or getattr(item, 'is_draft', False):
+        return jsonify({"code": 1, "message": "物品不存在或为草稿"})
+
+    data = request.get_json(silent=True) or {}
+    action = data.get("action", "").strip()
+
+    if action not in ("approve", "reject"):
+        return jsonify({"code": 1, "message": "无效的审核操作"})
+
+    if _item_review_status(item) not in ("pending",):
+        return jsonify({"code": 1, "message": "该物品当前不是待审核状态"})
+
+    if action == "approve":
+        item.review_status = "approved"
+        message = "已通过审核"
+    else:
+        item.review_status = "rejected"
+        message = "已拒绝"
+
+    db.session.commit()
+    return jsonify({"code": 0, "message": message})
+
+
+@app.route("/admin/items/batch/review", methods=["POST"])
+@admin_required
+def admin_batch_review_items():
+    """批量审核物品"""
+    data = request.get_json(silent=True) or {}
+    item_ids = data.get("ids", [])
+    action = data.get("action", "").strip()
+
+    if not item_ids:
+        return jsonify({"code": 1, "message": "请选择要审核的物品"})
+    if action not in ("approve", "reject"):
+        return jsonify({"code": 1, "message": "无效的审核操作"})
+
+    updated = 0
+    for item_id in item_ids:
+        item = Item.query.get(item_id)
+        if item and getattr(item, 'is_draft', False) == False:
+            if _item_review_status(item) == "pending":
+                item.review_status = "approved" if action == "approve" else "rejected"
+                updated += 1
+
+    db.session.commit()
+    return jsonify({
+        "code": 0,
+        "message": f"已更新 {updated} 条记录的审核状态",
+        "data": {"updated": updated}
+    })
+
+
+@app.route("/admin/items/batch/delete", methods=["POST"])
+@admin_required
+def admin_batch_delete_items():
+    """批量删除物品"""
+    data = request.get_json(silent=True) or {}
+    item_ids = data.get("ids", [])
+
+    if not item_ids:
+        return jsonify({"code": 1, "message": "请选择要删除的物品"})
+
+    deleted = 0
+    for item_id in item_ids:
+        item = Item.query.get(item_id)
+        if item:
+            # 同时删除关联的线索
+            ItemClue.query.filter_by(item_id=item.id).delete(synchronize_session=False)
+            db.session.delete(item)
+            deleted += 1
+
+    db.session.commit()
+    return jsonify({
+        "code": 0,
+        "message": f"已删除 {deleted} 条记录",
+        "data": {"deleted": deleted}
+    })
+
+
+@app.route("/admin/stats/overview", methods=["GET"])
+@admin_required
+def admin_stats_overview():
+    """总览统计"""
+    total_items = Item.query.filter_by(is_draft=False).count()
+    pending_items = Item.query.filter_by(is_draft=False, review_status="pending").count()
+    approved_items = Item.query.filter_by(is_draft=False, review_status="approved").count()
+    rejected_items = Item.query.filter_by(is_draft=False, review_status="rejected").count()
+    claimed_items = Item.query.filter_by(is_draft=False, status="已认领").count()
+    total_users = User.query.filter(User.username != ADMIN_USERNAME).count()
+    pending_verifications = User.query.filter(
+        User.username != ADMIN_USERNAME,
+        User.student_verify_status == "pending"
+    ).count()
+    pending_clues = ItemClue.query.filter_by(status="pending").count()
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "totalItems": total_items,
+            "pendingItems": pending_items,
+            "approvedItems": approved_items,
+            "rejectedItems": rejected_items,
+            "claimedItems": claimed_items,
+            "totalUsers": total_users,
+            "pendingVerifications": pending_verifications,
+            "pendingClues": pending_clues,
+            "claimRate": round(claimed_items / approved_items * 100, 1) if approved_items > 0 else 0
+        }
+    })
+
+
+@app.route("/admin/stats/trend", methods=["GET"])
+@admin_required
+def admin_stats_trend():
+    """发布趋势（近30天）"""
+    days = request.args.get("days", 30, type=int)
+    days = min(days, 90)  # 最多90天
+
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    start_date = (today - timedelta(days=days-1)).strftime("%Y-%m-%d")
+
+    # 获取日期范围内的物品发布数据
+    items = Item.query.filter(
+        Item.is_draft == False,
+        Item.create_time >= start_date
+    ).all()
+
+    # 按日期分组统计
+    date_stats = {}
+    for i in range(days):
+        d = (today - timedelta(days=days-1-i)).strftime("%Y-%m-%d")
+        date_stats[d] = {"date": d, "total": 0, "lost": 0, "found": 0}
+
+    for item in items:
+        date_str = item.create_time[:10] if len(item.create_time) >= 10 else ""
+        if date_str in date_stats:
+            date_stats[date_str]["total"] += 1
+            if item.post_type == "寻物":
+                date_stats[date_str]["lost"] += 1
+            else:
+                date_stats[date_str]["found"] += 1
+
+    # 转换为列表
+    trend_data = list(date_stats.values())
+
+    # 计算总计
+    total_count = sum(d["total"] for d in trend_data)
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "list": trend_data,
+            "total": total_count,
+            "days": days
+        }
+    })
+
+
+@app.route("/admin/stats/distribution", methods=["GET"])
+@admin_required
+def admin_stats_distribution():
+    """分布统计"""
+    # 物品类型分布
+    lost_count = Item.query.filter_by(is_draft=False, post_type="寻物", review_status="approved").count()
+    found_count = Item.query.filter_by(is_draft=False, post_type="招领", review_status="approved").count()
+
+    # 审核状态分布
+    pending_count = Item.query.filter_by(is_draft=False, review_status="pending").count()
+    approved_count = Item.query.filter_by(is_draft=False, review_status="approved").count()
+    rejected_count = Item.query.filter_by(is_draft=False, review_status="rejected").count()
+
+    # 认领状态分布
+    unclaimed_count = Item.query.filter_by(is_draft=False, review_status="approved", status="未认领").count()
+    claimed_count = Item.query.filter_by(is_draft=False, status="已认领").count()
+
+    # 学生认证分布
+    verified_users = User.query.filter(
+        User.username != ADMIN_USERNAME,
+        User.student_verify_status == "approved"
+    ).count()
+    pending_users = User.query.filter(
+        User.username != ADMIN_USERNAME,
+        User.student_verify_status == "pending"
+    ).count()
+    normal_users = User.query.filter(
+        User.username != ADMIN_USERNAME,
+        User.student_verify_status.in_(["", "none", None])
+    ).count()
+    rejected_users = User.query.filter(
+        User.username != ADMIN_USERNAME,
+        User.student_verify_status == "rejected"
+    ).count()
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "postType": [
+                {"name": "寻物", "value": lost_count},
+                {"name": "招领", "value": found_count}
+            ],
+            "reviewStatus": [
+                {"name": "待审核", "value": pending_count},
+                {"name": "已通过", "value": approved_count},
+                {"name": "已拒绝", "value": rejected_count}
+            ],
+            "claimStatus": [
+                {"name": "未认领", "value": unclaimed_count},
+                {"name": "已认领", "value": claimed_count}
+            ],
+            "userVerify": [
+                {"name": "已认证", "value": verified_users},
+                {"name": "待审核", "value": pending_users},
+                {"name": "未认证", "value": normal_users},
+                {"name": "已拒绝", "value": rejected_users}
+            ]
+        }
+    })
+
+
+@app.route("/admin/clues/all", methods=["GET"])
+@admin_required
+def admin_list_all_clues():
+    """获取所有线索列表（含状态筛选）"""
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("pageSize", 10, type=int)
+    status = request.args.get("status", "").strip()
+
+    query = ItemClue.query
+
+    if status:
+        query = query.filter(ItemClue.status == status)
+
+    total = query.count()
+
+    offset = (page - 1) * page_size
+    clues = query.order_by(ItemClue.id.desc()).offset(offset).limit(page_size).all()
+
+    data = []
+    for clue in clues:
+        item = Item.query.get(clue.item_id)
+        if item:
+            data.append({
+                "id": clue.id,
+                "itemId": item.id,
+                "itemTitle": item.title,
+                "itemPostType": item.post_type,
+                "itemPublisher": item.publisher,
+                "posterContact": item.contact or "",
+                "submitter": clue.submitter,
+                "contact": clue.contact or "",
+                "foundLocation": clue.found_location or "",
+                "foundTime": clue.found_time or "",
+                "description": clue.description or "",
+                "imageUrl": clue.image_url or "",
+                "status": clue.status,
+                "createTime": clue.create_time,
+            })
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "list": data,
+            "total": total,
+            "page": page,
+            "pageSize": page_size
+        }
+    })
+
+
+@app.route("/admin/clues/<int:clue_id>", methods=["GET"])
+@admin_required
+def admin_get_clue(clue_id):
+    """获取线索详情"""
+    clue = ItemClue.query.get(clue_id)
+    if not clue:
+        return jsonify({"code": 1, "message": "线索不存在"})
+
+    item = Item.query.get(clue.item_id)
+    if not item:
+        return jsonify({"code": 1, "message": "关联物品不存在"})
+
+    return jsonify({
+        "code": 0,
+        "message": "ok",
+        "data": {
+            "id": clue.id,
+            "itemId": item.id,
+            "itemTitle": item.title,
+            "itemPostType": item.post_type,
+            "itemPublisher": item.publisher,
+            "posterContact": item.contact or "",
+            "submitter": clue.submitter,
+            "contact": clue.contact or "",
+            "foundLocation": clue.found_location or "",
+            "foundTime": clue.found_time or "",
+            "description": clue.description or "",
+            "imageUrl": clue.image_url or "",
+            "status": clue.status,
+            "createTime": clue.create_time,
+        }
+    })
+
+
+@app.route("/admin/student-verifications/batch", methods=["POST"])
+@admin_required
+def admin_batch_verify():
+    """批量审核学生认证"""
+    data = request.get_json(silent=True) or {}
+    usernames = data.get("usernames", [])
+    action = data.get("action", "").strip()
+
+    if not usernames:
+        return jsonify({"code": 1, "message": "请选择要审核的用户"})
+    if action not in ("approve", "reject"):
+        return jsonify({"code": 1, "message": "无效的审核操作"})
+
+    updated = 0
+    for username in usernames:
+        user = User.query.filter_by(username=username).first()
+        if user and user.student_verify_status == "pending":
+            if action == "approve":
+                user.student_verify_status = "approved"
+                user.student_verified = True
+            else:
+                user.student_verify_status = "rejected"
+                user.student_verified = False
+            updated += 1
+
+    db.session.commit()
+    return jsonify({
+        "code": 0,
+        "message": f"已更新 {updated} 条记录",
+        "data": {"updated": updated}
+    })
 
 
 # 旧版宿舍点位 id（JSON 改版前）→ 现行 dorm_1…，用于 SQLite 数据对齐

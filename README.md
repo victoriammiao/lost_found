@@ -5,19 +5,21 @@
 
 - 切到 admin-web 目录
 - 若没有 node_modules，会先执行 npm install
-- 再执行 npm run dev（Vite 开发服）
+- 再执行 npm run dev（Vite 开发服，端口 3000，代理到后端 5000）
 
-## backend-admin\start.bat
+## 小程序后端\start.bat
 
-- 切到 backend-admin 目录
-- 若存在 `..\.venv`（仓库根目录虚拟环境）或 `backend-admin\.venv`，会先 activate
-- 再执行 python app.py（与 app.py 里一致：`http://0.0.0.0:3001`）
+- 切到 mainwechatapp\campus-lost-found\backend 目录
+- 若存在 `..\.venv`（仓库根目录虚拟环境），会先 activate
+- 再执行 python app.py（端口 **5000**，同时提供小程序 API 和管理后台 API）
 
-首次使用 backend-admin 若根目录还没有 `.venv`，需先在仓库根或 backend-admin 里建好环境并安装依赖，例如：
+首次使用后端若根目录还没有 `.venv`，需先在仓库根或 backend 里建好环境并安装依赖，例如：
 
-`python -m venv .venv` → `.\.venv\Scripts\activate` → `pip install -r backend-admin\requirements.txt`
+`python -m venv .venv` → `.\.venv\Scripts\activate` → `pip install flask flask-cors flask-sqlalchemy werkzeug`
 
-之后直接双击 `backend-admin\start.bat` 即可。
+之后直接双击 `mainwechatapp\campus-lost-found\backend\start.bat` 即可。
+
+**注意**：管理后台（admin-web）现在统一使用小程序后端（端口 5000），不再需要单独的 backend-admin。
 
 # 微信小程序
 
